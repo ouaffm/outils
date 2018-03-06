@@ -1,0 +1,19 @@
+[package]
+name = "outils"
+version = "0.1.0"
+authors = ["Oliver"]
+
+[dependencies]
+rand = "0.3"
+bencher = "0.1.3"
+lazy_static = "0.2.8"
+slab = "0.4"
+itertools = "0.7.3"
+
+[[bench]]
+name = "outils_benchmarks"
+harness = false
+
+[profile.bench]
+opt-level = 3
+debug = true 
