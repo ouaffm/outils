@@ -1,9 +1,9 @@
+use types::{DefaultIndexType, IndexType, KeyType, NodeIndex, ValueType};
+
 pub mod aatree;
 pub mod waatree;
 pub mod aaforest;
 pub mod waaforest;
-
-use types::{DefaultIndexType, IndexType, KeyType, NodeIndex, ValueType};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum BstDirection {

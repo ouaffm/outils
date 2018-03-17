@@ -1,9 +1,9 @@
-use tree::{GenericTree, Tgf};
-use tree::bst::BalancedBinaryForest;
-use tree::bst::aaforest::AaForest;
-use types::NodeIndex;
 use super::{BinaryInOrderIndices, BinaryPostOrderIndices, BinaryPreOrderIndices,
             GeneralBfsIndices, GeneralDfsIndices, Traversable};
+use tree::{GenericTree, Tgf};
+use tree::bst::aaforest::AaForest;
+use tree::bst::BalancedBinaryForest;
+use types::NodeIndex;
 
 #[test]
 fn test_generic_dfs() {

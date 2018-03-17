@@ -1,14 +1,14 @@
+use graph::dynconn::{DynamicComponent, DynamicConnectivity, DynamicWeightedComponent};
 use slab::Slab;
-use std::ops::{Index, IndexMut};
-use std::mem::{size_of, swap};
 use std::marker::PhantomData;
+use std::mem::{size_of, swap};
+use std::ops::{Index, IndexMut};
 use std::ops::{Add, AddAssign};
-use tree::WeightedTree;
 use tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
 use tree::bst::waaforest::WeightedAaForest;
 use tree::traversal::Traversable;
-use types::{EdgeIndex, EmptyWeight, NodeIndex, VertexIndex, WeightType};
-use graph::dynconn::{DynamicComponent, DynamicConnectivity, DynamicWeightedComponent};
+use tree::WeightedTree;
+use types::{EdgeIndex, Edges, EmptyWeight, NodeIndex, Values, VertexIndex, WeightType};
 
 #[cfg(test)]
 mod tests;
@@ -89,6 +89,7 @@ impl DynamicVertex {
     }
 }
 
+#[derive(Clone, Debug)]
 struct DynamicVertexList {
     vertices: Vec<DynamicVertex>,
 }
@@ -139,6 +140,7 @@ impl DynamicEdge {
     }
 }
 
+#[derive(Clone, Debug)]
 struct DynamicEdgeList {
     edges: Slab<DynamicEdge>,
 }
@@ -239,6 +241,7 @@ struct EulerCutContext {
     w2: NodeIndex,
 }
 
+#[derive(Clone, Debug)]
 struct EulerForest<W>
 where
     W: WeightType,
@@ -520,6 +523,7 @@ where
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct DynamicGraph<W = EmptyWeight>
 where
     W: WeightType,
@@ -710,6 +714,16 @@ where
         ))
     }
 
+    fn components(&'dyn self) -> Box<Iterator<Item=VertexIndex> + 'dyn> {
+        Box::new(
+            self.euler[0]
+                .forest
+                .values()
+                .filter(move |&(n, _v)| self.euler[0].forest.parent(n).is_none())
+                .map(move |(n, _v)| self.euler[0].forest[n].vertex),
+        )
+    }
+
     fn component_edges(
         &'dyn self,
         v: VertexIndex,
@@ -769,6 +783,20 @@ where
             }
         }
         W::default()
+    }
+}
+
+impl<'slf, W> Edges<'slf> for DynamicGraph<W>
+    where
+        W: WeightType,
+{
+    fn edges(&'slf self) -> Box<Iterator<Item=(EdgeIndex, VertexIndex, VertexIndex)> + 'slf> {
+        Box::new(
+            self.edges
+                .edges
+                .iter()
+                .map(|(i, e)| (EdgeIndex(i), e.src, e.dst)),
+        )
     }
 }
 

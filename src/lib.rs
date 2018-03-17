@@ -6,7 +6,7 @@
 //! **Fully dynamic connectivity** for general graphs: A dynamic graph data structure is able to
 //! answer queries as to whether two vertices are connected in a graph through a path of edges.
 //! In this context, _fully dynamic_ means that the graph can be updated by insertions or
-//! deletions of edges between queries (see also https://en.wikipedia.org/wiki/Dynamic_connectivity)
+//! deletions of edges between queries (see also <https://en.wikipedia.org/wiki/Dynamic_connectivity>)
 //!
 //! - [`DynamicGraph`](./graph/dynconn/hdt/struct.DynamicGraph.html): Deterministic
 //! dynamic connectivity with query cost O(log(n)) and update costs of O(log^2 (n)). The structure
@@ -15,7 +15,7 @@
 //! **Balanced binary search trees**: A balanced binary search tree organizes search keys and their
 //! associated payload in a way such that the resulting binary tree has a minimal height, given the
 //! number of items stored, resulting in query and update costs of O(log(n)). This library uses
-//! AA trees (see https://en.wikipedia.org/wiki/AA_tree), an abstraction of red-black trees, for
+//! AA trees (see <https://en.wikipedia.org/wiki/AA_tree>, an abstraction of red-black trees, for
 //! balancing the trees after updates.
 //!
 //!  - [`AaTree`](./tree/bst/aatree/struct.AaTree.html): An iterative AA tree implementation using

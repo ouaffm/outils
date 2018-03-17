@@ -1,14 +1,14 @@
 use slab;
 use std::ops::{Index, IndexMut};
-use types::{DefaultWeightType, NodeIndex, ValueType, WeightType};
 use tree::{Tgf, WeightedTree};
-use tree::traversal::{BinaryPreOrderIndices, Traversable};
 use tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
+use tree::traversal::{BinaryPreOrderIndices, Traversable};
+use types::{DefaultWeightType, NodeIndex, Values, ValueType, WeightType};
 
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Node<V, W>
 where
     V: ValueType,
@@ -92,7 +92,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct WeightedAaForest<V, W = DefaultWeightType>
 where
     V: ValueType,
@@ -802,9 +802,7 @@ where
             i += 1;
             mask <<= 1;
         }
-        if (i < height_u) && ((path_u & mask) == 0) {
-            return true;
-        } else if (i < height_v) && ((path_v & mask) != 0) {
+        if (i < height_u) && ((path_u & mask) == 0) || (i < height_v) && ((path_v & mask) != 0) {
             return true;
         }
         false
@@ -840,6 +838,21 @@ where
         self.arena
             .get(node.index())
             .map_or(W::default(), |n| n.subweight)
+    }
+}
+
+impl<'slf, V, W> Values<'slf, V> for WeightedAaForest<V, W>
+    where
+        V: 'slf + ValueType,
+        W: WeightType,
+{
+    fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
+        Box::new(
+            self.arena
+                .iter()
+                .filter(move |n| n.0 > self.sdummy)
+                .map(move |(i, n)| (NodeIndex(i), &n.value)),
+        )
     }
 }
 

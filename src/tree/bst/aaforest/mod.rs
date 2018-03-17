@@ -1,9 +1,9 @@
 use slab;
 use std::ops::{Index, IndexMut};
-use types::{NodeIndex, ValueType};
+use tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
 use tree::Tgf;
 use tree::traversal::{BinaryPreOrderIndices, Traversable};
-use tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
+use types::{NodeIndex, Values, ValueType};
 
 #[cfg(test)]
 mod tests;
@@ -80,7 +80,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AaForest<V>
 where
     V: ValueType,
@@ -612,9 +612,7 @@ where
             i += 1;
             mask <<= 1;
         }
-        if (i < height_u) && ((path_u & mask) == 0) {
-            return true;
-        } else if (i < height_v) && ((path_v & mask) != 0) {
+        if (i < height_u) && ((path_u & mask) == 0) || (i < height_v) && ((path_v & mask) != 0) {
             return true;
         }
         false
@@ -763,6 +761,20 @@ where
         let root = self.isolate(dummy);
         self.init_dummy(dummy);
         Some(NodeIndex(root))
+    }
+}
+
+impl<'slf, V> Values<'slf, V> for AaForest<V>
+    where
+        V: 'slf + ValueType,
+{
+    fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
+        Box::new(
+            self.arena
+                .iter()
+                .filter(move |n| n.0 > self.sdummy)
+                .map(move |(i, n)| (NodeIndex(i), &n.value)),
+        )
     }
 }
 

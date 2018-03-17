@@ -1,16 +1,16 @@
+use slab;
 use std::cmp::Ordering;
 use std::iter::empty;
 use std::ops::{Index, IndexMut};
-use slab;
-use types::{KeyType, Keys, NodeIndex, ValueType, Values};
-use tree::Tgf;
-use tree::traversal::{BinaryInOrderIndices, BinaryInOrderValues, Traversable};
 use tree::bst::{BinarySearchTree, BstDirection, OrderedTree};
+use tree::Tgf;
+use tree::traversal::{BinaryInOrder, BinaryInOrderIndices, Traversable};
+use types::{Keys, KeyType, NodeIndex, Values, ValueType};
 
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Node<K, V>
 where
     K: KeyType,
@@ -91,7 +91,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AaTree<K, V>
 where
     K: KeyType,
@@ -607,13 +607,13 @@ where
     K: 'slf + KeyType,
     V: ValueType,
 {
-    fn keys(&'slf self) -> Box<Iterator<Item = &'slf K> + 'slf> {
+    fn keys(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf K)> + 'slf> {
         if self.root == self.nil {
-            return Box::new(empty::<&'slf K>());
+            return Box::new(empty::<(NodeIndex, &'slf K)>());
         }
         Box::new(
             BinaryInOrderIndices::new(self, NodeIndex(self.root))
-                .map(move |i| &self.arena[i.index()].key),
+                .map(move |i| (i, &self.arena[i.index()].key)),
         )
     }
 }
@@ -623,11 +623,11 @@ where
     K: KeyType,
     V: 'slf + ValueType,
 {
-    fn values(&'slf self) -> Box<Iterator<Item = &'slf V> + 'slf> {
+    fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
         if self.root == self.nil {
-            return Box::new(empty::<&'slf V>());
+            return Box::new(empty::<(NodeIndex, &'slf V)>());
         }
-        Box::new(BinaryInOrderValues::new(self, NodeIndex(self.root)))
+        Box::new(BinaryInOrder::new(self, NodeIndex(self.root)))
     }
 }
 

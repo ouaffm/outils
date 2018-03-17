@@ -1,9 +1,9 @@
+use slab;
+use tree::traversal::Traversable;
+use types::{DefaultIndexType, IndexType, NodeIndex, ValueType, WeightType};
+
 pub mod bst;
 pub mod traversal;
-
-use slab;
-use types::{DefaultIndexType, IndexType, NodeIndex, ValueType, WeightType};
-use tree::traversal::Traversable;
 
 pub trait WeightedTree<W, Ix = DefaultIndexType>
 where
@@ -19,6 +19,7 @@ pub trait Tgf {
     fn to_tgf(&self) -> String;
 }
 
+#[derive(Clone, Debug)]
 struct Node<V>
 where
     V: ValueType,
@@ -41,6 +42,7 @@ where
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct GenericTree<V>
 where
     V: ValueType,

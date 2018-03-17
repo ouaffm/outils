@@ -1,11 +1,11 @@
-use super::{DynamicGraph, EdgeDirection, EdgeIndex, EulerVertex};
-use std::mem::{size_of, size_of_val};
-use types::{NodeIndex, VertexIndex};
-use tree::WeightedTree;
-use tree::traversal::{BinaryInOrder, Traversable};
 use graph::dynconn::{DynamicComponent, DynamicConnectivity};
 use rand;
 use rand::Rng;
+use std::mem::{size_of, size_of_val};
+use super::{DynamicGraph, EdgeDirection, EdgeIndex, EulerVertex};
+use tree::traversal::{BinaryInOrder, Traversable};
+use tree::WeightedTree;
+use types::{NodeIndex, VertexIndex};
 
 #[test]
 fn test_basic_insert() {
@@ -100,6 +100,8 @@ fn test_complete_insert_delete() {
 }
 
 fn validate(dyn: &DynamicGraph<usize>) -> bool {
+    let components: Vec<VertexIndex> = dyn.components().collect();
+    let mut n_components = 0;
     for level in 0..dyn.max_level {
         for i in 0..dyn.euler[level].vertices.vertices.len() {
             let n = dyn.euler[level].vertices.vertices[i].active_node;
@@ -128,7 +130,7 @@ fn validate(dyn: &DynamicGraph<usize>) -> bool {
                 }
             }
         }
-        for i in 3..((dyn.euler[level].vertices.vertices.len() * 2) + 2) {
+        for i in 3..((dyn.euler[level].vertices.vertices.len() * 2) + 3) {
             assert!(
                 size_of_val(&dyn.ext_euler.forest.weight(NodeIndex(i))) == 3 * size_of::<usize>()
             );
@@ -148,11 +150,23 @@ fn validate(dyn: &DynamicGraph<usize>) -> bool {
                 }
             }
             if dyn.euler[level].forest.parent(NodeIndex(i)).is_none() {
+                if level == 0 {
+                    let vertex = dyn.euler[0].forest[NodeIndex(i)].vertex;
+                    n_components += 1;
+                    if !components.contains(&vertex) {
+                        println!("Component root {:?} not contained in component list", vertex);
+                        return false;
+                    }
+                }
                 if validate_component(dyn, level, NodeIndex(i)) == false {
                     return false;
                 }
             }
         }
+    }
+    if n_components != components.len() {
+        println!("Found {:?} component roots, expected {:?}, {:?}", n_components, components.len(), components);
+        return false;
     }
     for item in dyn.edges.edges.iter() {
         let idx = EdgeIndex(item.0);

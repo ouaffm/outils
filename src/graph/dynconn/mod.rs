@@ -20,6 +20,8 @@ where
         v: VertexIndex<Ix>,
     ) -> Box<Iterator<Item = VertexIndex<Ix>> + 'a>;
 
+    fn components(&'a self) -> Box<Iterator<Item=VertexIndex<Ix>> + 'a>;
+
     fn component_edges(
         &'a self,
         v: VertexIndex<Ix>,

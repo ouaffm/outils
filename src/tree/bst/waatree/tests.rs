@@ -1,11 +1,10 @@
-use std::cmp::Ordering;
 use rand;
 use rand::Rng;
-use super::WeightedAaTree;
+use std::cmp::Ordering;
 use super::BinarySearchTree;
-use tree::Tgf;
-
+use super::WeightedAaTree;
 use tree::bst::BstDirection;
+use tree::Tgf;
 
 #[test]
 fn test_basic_insert_ascending() {

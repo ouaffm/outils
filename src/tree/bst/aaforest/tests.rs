@@ -1,10 +1,10 @@
-use std::cmp::Ordering;
 use rand;
 use rand::Rng;
+use std::cmp::Ordering;
 use super::AaForest;
 use tree::bst::{BalancedBinaryForest, OrderedTree};
-use tree::Tgf;
 use tree::bst::BstDirection;
+use tree::Tgf;
 use types::NodeIndex;
 
 #[test]

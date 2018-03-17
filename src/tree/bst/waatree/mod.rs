@@ -1,16 +1,16 @@
+use slab;
 use std::cmp::Ordering;
 use std::iter::empty;
 use std::ops::{Index, IndexMut};
-use slab;
-use types::{DefaultWeightType, KeyType, Keys, NodeIndex, ValueType, Values, WeightType};
 use tree::{Tgf, WeightedTree};
-use tree::traversal::{BinaryInOrderIndices, BinaryInOrderValues, Traversable};
 use tree::bst::{BinarySearchTree, BstDirection, OrderedTree};
+use tree::traversal::{BinaryInOrder, BinaryInOrderIndices, Traversable};
+use types::{DefaultWeightType, Keys, KeyType, NodeIndex, Values, ValueType, WeightType};
 
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Node<K, V, W>
 where
     K: KeyType,
@@ -103,7 +103,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct WeightedAaTree<K, V, W = DefaultWeightType>
 where
     K: KeyType,
@@ -677,32 +677,34 @@ where
     }
 }
 
-impl<'slf, K, V> Keys<'slf, K> for WeightedAaTree<K, V>
+impl<'slf, K, V, W> Keys<'slf, K> for WeightedAaTree<K, V, W>
 where
     K: 'slf + KeyType,
     V: ValueType,
+    W: WeightType,
 {
-    fn keys(&'slf self) -> Box<Iterator<Item = &'slf K> + 'slf> {
+    fn keys(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf K)> + 'slf> {
         if self.root == self.nil {
-            return Box::new(empty::<&'slf K>());
+            return Box::new(empty::<(NodeIndex, &'slf K)>());
         }
         Box::new(
             BinaryInOrderIndices::new(self, NodeIndex(self.root))
-                .map(move |i| &self.arena[i.index()].key),
+                .map(move |i| (i, &self.arena[i.index()].key)),
         )
     }
 }
 
-impl<'slf, K, V> Values<'slf, V> for WeightedAaTree<K, V>
+impl<'slf, K, V, W> Values<'slf, V> for WeightedAaTree<K, V, W>
 where
     K: KeyType,
     V: 'slf + ValueType,
+    W: WeightType,
 {
-    fn values(&'slf self) -> Box<Iterator<Item = &'slf V> + 'slf> {
+    fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
         if self.root == self.nil {
-            return Box::new(empty::<&'slf V>());
+            return Box::new(empty::<(NodeIndex, &'slf V)>());
         }
-        Box::new(BinaryInOrderValues::new(self, NodeIndex(self.root)))
+        Box::new(BinaryInOrder::new(self, NodeIndex(self.root)))
     }
 }
 

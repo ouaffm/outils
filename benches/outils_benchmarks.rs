@@ -6,17 +6,16 @@ extern crate outils;
 extern crate rand;
 
 use bencher::Bencher;
-use rand::Rng;
 use outils::graph::dynconn::{DynamicConnectivity, DynamicWeightedComponent};
 use outils::graph::dynconn::hdt::DynamicGraph;
-use outils::tree::bst::aatree::AaTree;
 use outils::tree::bst::aaforest::AaForest;
-use outils::tree::bst::waaforest::WeightedAaForest;
+use outils::tree::bst::aatree::AaTree;
 use outils::tree::bst::BalancedBinaryForest;
-use outils::tree::WeightedTree;
 use outils::tree::bst::BinarySearchTree;
+use outils::tree::bst::waaforest::WeightedAaForest;
+use outils::tree::WeightedTree;
 use outils::types::{EmptyWeight, VertexIndex};
-
+use rand::Rng;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fmt::Display;

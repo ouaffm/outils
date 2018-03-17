@@ -120,18 +120,20 @@ where
     }
 }
 
-pub trait Keys<'slf, K>
+pub trait Keys<'slf, K, Ix = DefaultIndexType>
 where
     K: 'slf + KeyType,
+    Ix: IndexType,
 {
-    fn keys(&'slf self) -> Box<Iterator<Item = &'slf K> + 'slf>;
+    fn keys(&'slf self) -> Box<Iterator<Item=(NodeIndex<Ix>, &'slf K)> + 'slf>;
 }
 
-pub trait Values<'slf, V>
+pub trait Values<'slf, V, Ix = DefaultIndexType>
 where
     V: 'slf + ValueType,
+    Ix: IndexType,
 {
-    fn values(&'slf self) -> Box<Iterator<Item = &'slf V> + 'slf>;
+    fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex<Ix>, &'slf V)> + 'slf>;
 }
 
 pub trait Vertices<'slf, Ix = DefaultIndexType>
@@ -145,5 +147,7 @@ pub trait Edges<'slf, Ix = DefaultIndexType>
 where
     Ix: IndexType,
 {
-    fn edges(&'slf self) -> Box<Iterator<Item = EdgeIndex<Ix>> + 'slf>;
+    fn edges(
+        &'slf self,
+    ) -> Box<Iterator<Item=(EdgeIndex<Ix>, VertexIndex<Ix>, VertexIndex<Ix>)> + 'slf>;
 }
