@@ -91,6 +91,21 @@ where
     }
 }
 
+/// `AaTree<K, V>` is a balanced binary search tree data structure. Its tree nodes
+/// are held in a [memory arena][1] nd are addressed through their associated `NodeIndex`.
+///
+/// The balancing method for maintaining a tree height of log(n) where n is the number nodes
+/// in the tree is described here: [AA tree][2].
+///
+/// `AaTree` is parameterized over:
+///
+/// - Search keys of type 'K', where 'K' must implement the trait ['KeyType'][3]
+/// - Associated values of type 'V', where 'V' must implement the trait ['ValueType']
+///
+/// [1]: https://en.wikipedia.org/wiki/Region-based_memory_management
+/// [2]: https://en.wikipedia.org/wiki/AA_tree
+/// [3]: types/trait.KeyType.html
+/// [4]: .types/trait.ValueType.html
 #[derive(Clone, Debug)]
 pub struct AaTree<K, V>
 where
@@ -307,7 +322,7 @@ where
         node: usize,
         dir: BstDirection,
     ) -> Option<usize> {
-        if self.arena.get(node).is_some() {
+        if self.arena.contains(node) {
             let ret = f(self, node, dir);
             if ret == self.nil {
                 return None;
@@ -544,10 +559,8 @@ where
 
     fn child_count(&self, node: NodeIndex) -> usize {
         let node = node.index();
-        if let Some(_n) = self.arena.get(node) {
-            if node != self.nil {
-                return 2;
-            }
+        if self.arena.contains(node) && node != self.nil {
+            return 2;
         }
         0
     }
@@ -595,7 +608,9 @@ where
     fn is_smaller(&self, node_u: NodeIndex, node_v: NodeIndex) -> bool {
         let node_u = node_u.index();
         let node_v = node_v.index();
-        if node_u == self.nil || node_v == self.nil {
+        if node_u == self.nil || !self.arena.contains(node_u) || node_v == self.nil
+            || !self.arena.contains(node_v)
+            {
             return false;
         }
         self.arena[node_u].key < self.arena[node_v].key

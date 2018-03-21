@@ -1,12 +1,38 @@
+use prelude::*;
 use rand;
 use rand::Rng;
 use std::cmp::Ordering;
 use super::WeightedAaForest;
-use tree::bst::{BalancedBinaryForest, OrderedTree};
-use tree::bst::BstDirection;
 use tree::Tgf;
-use tree::WeightedTree;
-use types::NodeIndex;
+
+#[test]
+fn test_api() {
+    let mut tree: WeightedAaForest<i64> = WeightedAaForest::new(6);
+    let n0 = tree.insert(0);
+    let n1 = tree.insert(1);
+    let n2 = tree.insert(2);
+    let n3 = tree.insert(3);
+    assert!(tree.remove(n2) == Some(2));
+
+    let nodes = vec![n2, NodeIndex(0), NodeIndex(10)];
+
+    for node in nodes {
+        assert!(tree.root(node).is_none());
+        assert!(tree.value(node).is_none());
+        assert!(tree.value_mut(node).is_none());
+        assert!(tree.parent(node).is_none());
+        assert!(tree.child(node, 0).is_none());
+        assert!(tree.child_count(node) == 0);
+        assert!(tree.sub_predecessor(node).is_none());
+        assert!(tree.sub_successor(node).is_none());
+        assert!(tree.predecessor(node).is_none());
+        assert!(tree.successor(node).is_none());
+        assert!(tree.first(node).is_none());
+        assert!(tree.last(node).is_none());
+        assert!(!tree.is_smaller(n1, node));
+        assert!(!tree.is_smaller(node, n1));
+    }
+}
 
 #[test]
 fn test_basic_append_ascending() {

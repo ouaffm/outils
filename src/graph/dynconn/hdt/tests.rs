@@ -132,10 +132,13 @@ fn validate(dyn: &DynamicGraph<usize>) -> bool {
         }
         for i in 3..((dyn.euler[level].vertices.vertices.len() * 2) + 3) {
             assert!(
-                size_of_val(&dyn.ext_euler.forest.weight(NodeIndex(i))) == 3 * size_of::<usize>()
+                dyn.ext_euler.forest.value(NodeIndex(i)).is_none()
+                    || size_of_val(&dyn.ext_euler.forest.weight(NodeIndex(i)))
+                    == 3 * size_of::<usize>()
             );
             assert!(
-                size_of_val(&dyn.euler[level].forest.weight(NodeIndex(i)))
+                dyn.euler[level].forest.value(NodeIndex(i)).is_none()
+                    || size_of_val(&dyn.euler[level].forest.weight(NodeIndex(i)))
                     == 2 * size_of::<usize>()
             );
             if dyn.euler[level].forest.value(NodeIndex(i)).is_none() {
@@ -154,7 +157,10 @@ fn validate(dyn: &DynamicGraph<usize>) -> bool {
                     let vertex = dyn.euler[0].forest[NodeIndex(i)].vertex;
                     n_components += 1;
                     if !components.contains(&vertex) {
-                        println!("Component root {:?} not contained in component list", vertex);
+                        println!(
+                            "Component root {:?} not contained in component list",
+                            vertex
+                        );
                         return false;
                     }
                 }
@@ -165,7 +171,12 @@ fn validate(dyn: &DynamicGraph<usize>) -> bool {
         }
     }
     if n_components != components.len() {
-        println!("Found {:?} component roots, expected {:?}, {:?}", n_components, components.len(), components);
+        println!(
+            "Found {:?} component roots, expected {:?}, {:?}",
+            n_components,
+            components.len(),
+            components
+        );
         return false;
     }
     for item in dyn.edges.edges.iter() {

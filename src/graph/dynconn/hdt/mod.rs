@@ -380,16 +380,29 @@ where
 
         self.forest.remove(w1);
 
-        let (mut prefix, postfix) = self.forest
-            .split(v1, BstDirection::Right)
-            .expect("make_first(): split() should never return None");
-
-        prefix = self.forest
-            .append(prefix, v2)
-            .expect("make_first(): append() should never return None");
-        self.forest
-            .append(postfix, prefix)
-            .expect("make_first(): append() should never return None");
+        match self.forest.split(v1, BstDirection::Right) {
+            (Some(mut prefix), Some(postfix)) => {
+                prefix = self.forest
+                    .append(prefix, v2)
+                    .expect("make_first(): append() should never return None");
+                self.forest
+                    .append(postfix, prefix)
+                    .expect("make_first(): append() should never return None");
+            }
+            (Some(prefix), None) => {
+                self.forest
+                    .append(prefix, v2)
+                    .expect("make_first(): append() should never return None");
+            }
+            (None, Some(postfix)) => {
+                self.forest
+                    .append(postfix, v2)
+                    .expect("make_first(): append() should never return None");
+            }
+            (None, None) => {
+                panic!("make_first(): split() should never return (None, None");
+            }
+        }
     }
 
     fn link(&mut self, e1: EdgeIndex, edges: &DynamicEdgeList) {
@@ -422,17 +435,29 @@ where
             .append(w1, v2)
             .expect("link(): append() should never return None");
 
-        let (mut prefix, postfix) = self.forest
-            .split(v1, BstDirection::Left)
-            .expect("link(): split() should never return None");
-
-        prefix = self.forest
-            .append(prefix, infix)
-            .expect("link(): append() should never return None");
-
-        self.forest
-            .append(prefix, postfix)
-            .expect("link(): append() should never return None");
+        match self.forest.split(v1, BstDirection::Left) {
+            (Some(mut prefix), Some(postfix)) => {
+                prefix = self.forest
+                    .append(prefix, infix)
+                    .expect("link(): append() should never return None");
+                self.forest
+                    .append(prefix, postfix)
+                    .expect("link(): append() should never return None");
+            }
+            (Some(prefix), None) => {
+                self.forest
+                    .append(prefix, infix)
+                    .expect("link(): append() should never return None");
+            }
+            (None, Some(postfix)) => {
+                self.forest
+                    .append(infix, postfix)
+                    .expect("link(): append() should never return None");
+            }
+            (None, None) => {
+                panic!("make_first(): split() should never return (None, None");
+            }
+        }
 
         self.forest[v1][EdgeDirection::Outgoing] = Some(hv);
         self.forest[v2][EdgeDirection::Incoming] = Some(hv);
@@ -491,11 +516,13 @@ where
         let ctx = self.cut_context(e1, edges);
         let hv_e2_idx = self.forest[ctx.v2][EdgeDirection::Outgoing];
 
-        let (prefix, _) = self.forest
+        let prefix = self.forest
             .split(ctx.v1, BstDirection::Left)
+            .0
             .expect("cut(): split() should never return None");
-        let (_, postfix) = self.forest
+        let postfix = self.forest
             .split(ctx.v2, BstDirection::Right)
+            .1
             .expect("cut(): split() should never return None");
 
         self.forest.append(prefix, postfix);

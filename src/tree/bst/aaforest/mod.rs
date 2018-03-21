@@ -108,6 +108,11 @@ where
         }
     }
 
+    #[inline]
+    fn is_valid_index(&self, node: usize) -> bool {
+        node > self.sdummy && self.arena.contains(node)
+    }
+
     fn skew_node(&mut self, node: usize) -> usize {
         if node == self.nil {
             return node;
@@ -308,7 +313,7 @@ where
         node: usize,
         dir: BstDirection,
     ) -> Option<usize> {
-        if self.arena.get(node).is_some() {
+        if self.arena.contains(node) {
             let ret = f(self, node, dir);
             if ret <= self.sdummy {
                 return None;
@@ -466,7 +471,7 @@ where
 {
     fn root(&self, node: NodeIndex) -> Option<NodeIndex> {
         let node = node.index();
-        if node <= self.sdummy || self.arena.get(node).is_none() {
+        if node <= self.sdummy || !self.arena.contains(node) {
             return None;
         }
         let mut child = node;
@@ -528,10 +533,8 @@ where
 
     fn child_count(&self, node: NodeIndex) -> usize {
         let node = node.index();
-        if let Some(_n) = self.arena.get(node) {
-            if node > self.sdummy {
-                return 2;
-            }
+        if self.arena.contains(node) && node > self.sdummy {
+            return 2;
         }
         0
     }
@@ -584,11 +587,7 @@ where
     fn is_smaller(&self, node_u: NodeIndex, node_v: NodeIndex) -> bool {
         let node_u = node_u.index();
         let node_v = node_v.index();
-        if node_u <= self.sdummy || node_v <= self.sdummy {
-            return false;
-        }
-
-        if node_u == node_v {
+        if !self.is_valid_index(node_u) || !self.is_valid_index(node_v) || node_u == node_v {
             return false;
         }
 
@@ -638,10 +637,14 @@ where
         Some(self.arena.remove(node).value)
     }
 
-    fn split(&mut self, node: NodeIndex, dir: BstDirection) -> Option<(NodeIndex, NodeIndex)> {
+    fn split(
+        &mut self,
+        node: NodeIndex,
+        dir: BstDirection,
+    ) -> (Option<NodeIndex>, Option<NodeIndex>) {
         let node = node.index();
-        if node <= self.sdummy {
-            return None;
+        if node <= self.sdummy || !self.arena.contains(node) {
+            return (None, None);
         }
 
         let dummy = self.sdummy;
@@ -680,7 +683,14 @@ where
         self.unlink(dummy, right, BstDirection::Right);
         self.arena[dummy].level = 0;
 
-        Some((NodeIndex(left), NodeIndex(right)))
+        if left == self.nil {
+            return (None, Some(NodeIndex(right)));
+        }
+        if right == self.nil {
+            return (Some(NodeIndex(left)), None);
+        }
+
+        (Some(NodeIndex(left)), Some(NodeIndex(right)))
     }
 
     fn split_all(&mut self, node: NodeIndex, size_hint: Option<usize>) -> Vec<NodeIndex> {

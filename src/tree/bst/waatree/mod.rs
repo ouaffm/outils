@@ -378,7 +378,7 @@ where
         node: usize,
         dir: BstDirection,
     ) -> Option<usize> {
-        if self.arena.get(node).is_some() {
+        if self.arena.contains(node) {
             let ret = f(self, node, dir);
             if ret == self.nil {
                 return None;
@@ -579,7 +579,7 @@ where
 
     fn child_count(&self, node: NodeIndex) -> usize {
         let node = node.index();
-        if let Some(_n) = self.arena.get(node) {
+        if self.arena.contains(node) {
             if node != self.nil {
                 return 2;
             }
@@ -637,7 +637,9 @@ where
     fn is_smaller(&self, node_u: NodeIndex, node_v: NodeIndex) -> bool {
         let node_u = node_u.index();
         let node_v = node_v.index();
-        if node_u == self.nil || node_v == self.nil {
+        if node_u == self.nil || !self.arena.contains(node_u) || node_v == self.nil
+            || !self.arena.contains(node_v)
+            {
             return false;
         }
         self.arena[node_u].key < self.arena[node_v].key

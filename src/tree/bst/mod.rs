@@ -58,7 +58,7 @@ where
         &mut self,
         node: NodeIndex<Ix>,
         dir: BstDirection,
-    ) -> Option<(NodeIndex<Ix>, NodeIndex<Ix>)>;
+    ) -> (Option<NodeIndex<Ix>>, Option<NodeIndex<Ix>>);
     fn split_all(&mut self, node: NodeIndex<Ix>, size_hint: Option<usize>) -> Vec<NodeIndex<Ix>>;
     fn append(&mut self, node_u: NodeIndex<Ix>, node_v: NodeIndex<Ix>) -> Option<NodeIndex<Ix>>;
 }

@@ -1,10 +1,37 @@
+use prelude::*;
 use rand;
 use rand::Rng;
 use std::cmp::Ordering;
-use super::BinarySearchTree;
 use super::WeightedAaTree;
-use tree::bst::BstDirection;
 use tree::Tgf;
+
+#[test]
+fn test_api() {
+    let mut tree: WeightedAaTree<i64, &str> = WeightedAaTree::new(6);
+    tree.insert(0, "0");
+    tree.insert(1, "1");
+    tree.insert(2, "2");
+    tree.insert(3, "3");
+    assert!(tree.remove(&2).is_some());
+
+    let nodes = vec![NodeIndex(5), NodeIndex(0), NodeIndex(10)];
+
+    for node in nodes {
+        assert!(tree.value(node).is_none());
+        assert!(tree.value_mut(node).is_none());
+        assert!(tree.parent(node).is_none());
+        assert!(tree.child(node, 0).is_none());
+        assert!(tree.child_count(node) == 0);
+        assert!(tree.sub_predecessor(node).is_none());
+        assert!(tree.sub_successor(node).is_none());
+        assert!(tree.predecessor(node).is_none());
+        assert!(tree.successor(node).is_none());
+        assert!(tree.first(node).is_none());
+        assert!(tree.last(node).is_none());
+        assert!(!tree.is_smaller(NodeIndex(4), node));
+        assert!(!tree.is_smaller(node, NodeIndex(4)));
+    }
+}
 
 #[test]
 fn test_basic_insert_ascending() {
