@@ -654,6 +654,7 @@ where
 {
     fn set_weight(&mut self, node: NodeIndex, weight: W) {
         let node = node.index();
+        assert!(node > self.nil && self.arena.contains(node));
         self.arena[node].weight = weight;
         let mut parent = node;
 
@@ -666,16 +667,34 @@ where
         }
     }
 
-    fn weight(&self, node: NodeIndex) -> W {
-        self.arena
-            .get(node.index())
-            .map_or(W::default(), |n| n.weight)
+    fn weight(&self, node: NodeIndex) -> Option<&W> {
+        if node.index() > self.nil {
+            self.arena.get(node.index()).map(|n| &n.weight)
+        } else {
+            None
+        }
     }
 
-    fn subweight(&self, node: NodeIndex) -> W {
-        self.arena
-            .get(node.index())
-            .map_or(W::default(), |n| n.subweight)
+    fn subweight(&self, node: NodeIndex) -> Option<&W> {
+        if node.index() > self.nil {
+            self.arena.get(node.index()).map(|n| &n.subweight)
+        } else {
+            None
+        }
+    }
+
+    fn adjust_weight(&mut self, node: NodeIndex, f: &Fn(&mut W)) {
+        let node = node.index();
+        assert!(node > self.nil && self.arena.contains(node));
+        f(&mut self.arena[node].weight);
+        let mut parent = node;
+        loop {
+            if parent == self.nil {
+                break;
+            }
+            self.update_weights(parent);
+            parent = self.arena[parent].parent;
+        }
     }
 }
 

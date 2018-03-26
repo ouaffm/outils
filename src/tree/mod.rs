@@ -11,8 +11,9 @@ where
     Ix: IndexType,
 {
     fn set_weight(&mut self, node: NodeIndex<Ix>, weight: W);
-    fn weight(&self, node: NodeIndex<Ix>) -> W;
-    fn subweight(&self, node: NodeIndex<Ix>) -> W;
+    fn weight(&self, node: NodeIndex<Ix>) -> Option<&W>;
+    fn subweight(&self, node: NodeIndex<Ix>) -> Option<&W>;
+    fn adjust_weight(&mut self, node: NodeIndex<Ix>, f: &Fn(&mut W));
 }
 
 pub trait Tgf {

@@ -34,6 +34,6 @@ where
     Ix: IndexType,
 {
     fn set_vertex_weight(&mut self, v: VertexIndex<Ix>, weight: W);
-    fn vertex_weight(&self, v: VertexIndex<Ix>) -> W;
-    fn component_weight(&self, v: VertexIndex<Ix>) -> W;
+    fn vertex_weight(&self, v: VertexIndex<Ix>) -> Option<&W>;
+    fn component_weight(&self, v: VertexIndex<Ix>) -> Option<&W>;
 }

@@ -276,7 +276,9 @@ where
     }
 
     fn pass_activity(&mut self, v: NodeIndex, w: NodeIndex) {
-        let weight_v = self.forest.weight(v);
+        let weight_v = self.forest
+            .weight(v)
+            .map_or(VertexWeight::default(), |wv| *wv);
         if weight_v.act_count == 0 {
             return;
         }
@@ -297,17 +299,15 @@ where
     fn insert_adjacent_edge(&mut self, v: VertexIndex, e: EdgeIndex) {
         self.vertices[v].adj_edges.push(e);
         let n = self.vertices[v].active_node;
-        let mut weight = self.forest.weight(n);
-        weight.adj_count += 1;
-        self.forest.set_weight(n, weight);
+        self.forest
+            .adjust_weight(n, &|w: &mut VertexWeight<W>| (*w).adj_count += 1);
     }
 
     fn delete_adjacent_edge(&mut self, v: VertexIndex, idx: usize) {
         let v_act = self.vertices[v].active_node;
         self.vertices[v].adj_edges.remove(idx);
-        let mut v_weight = self.forest.weight(v_act);
-        v_weight.adj_count -= 1;
-        self.forest.set_weight(v_act, v_weight);
+        self.forest
+            .adjust_weight(v_act, &|w: &mut VertexWeight<W>| (*w).adj_count -= 1);
     }
 
     fn adjacent_edge_index(&self, v: VertexIndex, e: EdgeIndex) -> Option<usize> {
@@ -322,8 +322,12 @@ where
 
     fn tree_roots_ordered(&self, src: VertexIndex, dst: VertexIndex) -> (NodeIndex, NodeIndex) {
         let (left, right) = self.tree_roots(src, dst);
-        let left_tree_weight = self.forest.subweight(left);
-        let right_tree_weight = self.forest.subweight(right);
+        let left_tree_weight = self.forest
+            .subweight(left)
+            .map_or(VertexWeight::default(), |w| *w);
+        let right_tree_weight = self.forest
+            .subweight(right)
+            .map_or(VertexWeight::default(), |w| *w);
         if right_tree_weight.act_count < left_tree_weight.act_count {
             return (right, left);
         }
@@ -782,34 +786,35 @@ where
     fn set_vertex_weight(&mut self, v: VertexIndex, weight: W) {
         if size_of::<W>() > 0 {
             let n = self.ext_euler.vertices[v].active_node;
-            let mut w = self.ext_euler.forest.weight(n);
-            w.weight = weight;
-            self.ext_euler.forest.set_weight(n, w);
+            self.ext_euler
+                .forest
+                .adjust_weight(n, &|w: &mut VertexWeight<W>| (*w).weight = weight);
         }
     }
 
-    fn vertex_weight(&self, v: VertexIndex) -> W {
+    fn vertex_weight(&self, v: VertexIndex) -> Option<&W> {
         if size_of::<W>() > 0 {
             let n = self.ext_euler.vertices[v].active_node;
-            return self.ext_euler.forest.weight(n).weight;
+            self.ext_euler.forest.weight(n).map(|w| &w.weight)
+        } else {
+            None
         }
-        W::default()
     }
 
-    fn component_weight(&self, v: VertexIndex) -> W {
+    fn component_weight(&self, v: VertexIndex) -> Option<&W> {
         if size_of::<W>() > 0 {
             let n = self.ext_euler.vertices[v].active_node;
             let root = self.ext_euler.forest.root(n);
             match root {
                 Some(rt) => {
-                    return self.ext_euler.forest.subweight(rt).weight;
+                    return self.ext_euler.forest.subweight(rt).map(|w| &w.weight);
                 }
                 None => {
-                    return W::default();
+                    return None;
                 }
             }
         }
-        W::default()
+        None
     }
 }
 
@@ -844,7 +849,7 @@ where
         let f = &euler.forest;
         if let Some(rt) = f.root(node) {
             min_size = 1;
-            max_size = f.subweight(rt).act_count;
+            max_size = f.subweight(rt).map_or(0, |w| w.act_count);
             let stack_hint = (((max_size * 2) - 1) as f64).log2().floor() as usize;
             v = Vec::with_capacity(stack_hint);
             v.push(rt);
@@ -863,16 +868,16 @@ where
         loop {
             if let Some(n) = self.stack.pop() {
                 f.child(n, 1).map(|c| {
-                    if f.subweight(c).act_count > 0 {
+                    if f.subweight(c).map_or(0, |w| w.act_count) > 0 {
                         self.stack.push(c)
                     }
                 });
                 f.child(n, 0).map(|c| {
-                    if f.subweight(c).act_count > 0 {
+                    if f.subweight(c).map_or(0, |w| w.act_count) > 0 {
                         self.stack.push(c)
                     }
                 });
-                if f.weight(n).act_count == 1 {
+                if f.weight(n).map_or(0, |w| w.act_count) == 1 {
                     return Some(f[n].vertex);
                 }
             } else {
@@ -932,7 +937,7 @@ where
         let mut v;
         let f = &euler.forest;
         if let Some(rt) = f.root(node) {
-            let max_size = f.subweight(rt).act_count - 1;
+            let max_size = f.subweight(rt).map_or(0, |w| w.act_count) - 1;
             let stack_hint = ((((max_size + 1) * 2) - 1) as f64).log2().floor() as usize;
             v = Vec::with_capacity(stack_hint);
             v.push(rt);
@@ -983,7 +988,7 @@ where
         let mut v;
         let f = &euler.forest;
         if let Some(rt) = f.root(node) {
-            let mut stack_hint = f.subweight(rt).act_count;
+            let mut stack_hint = f.subweight(rt).map_or(0, |w| w.act_count);
             stack_hint = (((stack_hint * 2) - 1) as f64).log2().floor() as usize;
             v = Vec::with_capacity(stack_hint);
             v.push(rt);
@@ -1004,16 +1009,16 @@ where
             if self.idx == 0 {
                 if let Some(n) = self.stack.pop() {
                     f.child(n, 1).map(|c| {
-                        if f.subweight(c).adj_count > 0 {
+                        if f.subweight(c).map_or(0, |w| w.adj_count) > 0 {
                             self.stack.push(c)
                         }
                     });
                     f.child(n, 0).map(|c| {
-                        if f.subweight(c).adj_count > 0 {
+                        if f.subweight(c).map_or(0, |w| w.adj_count) > 0 {
                             self.stack.push(c)
                         }
                     });
-                    if f.weight(n).act_count == 1 {
+                    if f.weight(n).map_or(0, |w| w.act_count) == 1 {
                         let v = f[n].vertex;
                         self.vertex = Some(v);
                         self.idx = euler.vertices[v].adj_edges.len();
