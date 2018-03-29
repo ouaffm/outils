@@ -44,6 +44,9 @@ fn test_basic_insert_ascending() {
     tree.insert(5, "5");
     tree.insert(6, "6");
 
+    assert!(tree.insert(6, "7").unwrap().eq("6"));
+    assert!(tree.get(&6).unwrap().eq(&"7"));
+
     let rt = tree.root;
     assert!(check_edge_count(&tree));
     assert!(is_binary_search_tree(

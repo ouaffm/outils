@@ -11,8 +11,8 @@ answer queries as to whether two vertices are connected in a graph through a pat
 In this context, _fully dynamic_ means that the graph can be updated by insertions or
 deletions of edges between queries (see also [Dynamic Connectivity][1]).
 
-- [`DynamicGraph`][2]: Deterministic dynamic connectivity with query cost O(log(n)) and update
-costs of O(log^2 (n)). The structure also supports vertex weights, dynamically maintaining the
+- [`DynamicGraph`][2]: Deterministic dynamic connectivity with query cost **O(log(n))** and update
+costs of **O(log^2 (n))**. The structure also supports vertex weights, dynamically maintaining the
 total weight of connected components.
 
 ### Balanced binary search trees:

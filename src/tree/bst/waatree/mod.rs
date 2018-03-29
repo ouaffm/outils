@@ -1,6 +1,7 @@
 use slab;
 use std::cmp::Ordering;
 use std::iter::empty;
+use std::mem::swap;
 use std::ops::{Index, IndexMut};
 use tree::bst::{BinarySearchTree, BstDirection, OrderedTree};
 use tree::traversal::{BinaryInOrder, BinaryInOrderIndices, Traversable};
@@ -262,10 +263,10 @@ where
         }
     }
 
-    pub fn insert_weighted(&mut self, key: K, value: V, weight: W) {
+    pub fn insert_weighted(&mut self, key: K, value: V, weight: W) -> Option<V> {
         if self.root == self.nil {
             self.root = self.arena.insert(Node::new_leaf(key, value, weight));
-            return;
+            return None;
         }
 
         let mut parent = self.root;
@@ -283,7 +284,9 @@ where
                     child = self.arena[parent][BstDirection::Right];
                 }
                 Ordering::Equal => {
-                    return;
+                    let mut old_value = value;
+                    swap(&mut self.arena[parent].value, &mut old_value);
+                    return Some(old_value);
                 }
             }
 
@@ -306,6 +309,7 @@ where
                 break;
             }
         }
+        None
     }
 
     fn next_from_subtree(&self, node: usize, dir: BstDirection) -> usize {
@@ -396,8 +400,8 @@ where
     V: ValueType,
     W: WeightType,
 {
-    fn insert(&mut self, key: K, value: V) {
-        self.insert_weighted(key, value, W::default());
+    fn insert(&mut self, key: K, value: V) -> Option<V> {
+        self.insert_weighted(key, value, W::default())
     }
 
     fn remove(&mut self, key: &K) -> Option<V> {
@@ -503,8 +507,16 @@ where
         }
     }
 
-    fn get(&self, key: &K) -> Option<usize> {
-        self.find_node(key)
+    fn get(&self, key: &K) -> Option<&V> {
+        self.find_node(key).map(move |node| &self.arena[node].value)
+    }
+
+    fn get_mut(&mut self, key: &K) -> Option<&mut V> {
+        self.find_node(key).map(move |node| &mut self.arena[node].value)
+    }
+
+    fn index(&self, key: &K) -> Option<NodeIndex> {
+        self.find_node(key).map(NodeIndex)
     }
 
     fn contains_key(&self, key: &K) -> bool {
@@ -526,6 +538,8 @@ where
     V: ValueType,
     W: WeightType,
 {
+    /// Returns the root of this tree. The passed `NodeIndex` is ignored as this type only
+    /// contains a single rooted tree.
     fn root(&self, _node: NodeIndex) -> Option<NodeIndex> {
         if self.root == self.nil {
             return None;
@@ -767,9 +781,11 @@ where
             nodes.push_str(format!("{}", index).as_str());
             nodes.push_str(" [K = ");
             nodes.push_str(format!("{:?}", node.key).as_str());
+            nodes.push_str(", V = ");
+            nodes.push_str(format!("{:?}", node.value).as_str());
             nodes.push_str(", L = ");
             nodes.push_str(format!("{}", node.level).as_str());
-            nodes.push_str(" W = ");
+            nodes.push_str(", W = ");
             nodes.push_str(format!("{:?}", node.weight).as_str());
             nodes.push_str(", S = ");
             nodes.push_str(format!("{:?}", node.subweight).as_str());
