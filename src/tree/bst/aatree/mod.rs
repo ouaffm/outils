@@ -3,9 +3,8 @@ use std::cmp::Ordering;
 use std::iter::empty;
 use std::ops::{Index, IndexMut};
 use tree::bst::{BinarySearchTree, BstDirection, OrderedTree};
-use tree::Tgf;
 use tree::traversal::{BinaryInOrder, BinaryInOrderIndices, Traversable};
-use types::{Keys, KeyType, NodeIndex, Values, ValueType};
+use types::{Keys, KeyType, NodeIndex, Tgf, Values, ValueType};
 
 #[cfg(test)]
 mod tests;

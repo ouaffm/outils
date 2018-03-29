@@ -3,7 +3,7 @@ use rand;
 use rand::Rng;
 use std::cmp::Ordering;
 use super::AaForest;
-use tree::Tgf;
+use types::Tgf;
 
 #[test]
 fn test_api() {

@@ -26,6 +26,11 @@ where
         &'a self,
         v: VertexIndex<Ix>,
     ) -> Box<Iterator<Item = (EdgeIndex<Ix>, VertexIndex<Ix>, VertexIndex<Ix>)> + 'a>;
+
+    fn disconnect_component(
+        &mut self,
+        v: VertexIndex<Ix>,
+    ) -> Vec<(EdgeIndex<Ix>, VertexIndex<Ix>, VertexIndex<Ix>)>;
 }
 
 pub trait DynamicWeightedComponent<W = EmptyWeight, Ix = DefaultIndexType>
@@ -36,4 +41,5 @@ where
     fn set_vertex_weight(&mut self, v: VertexIndex<Ix>, weight: W);
     fn vertex_weight(&self, v: VertexIndex<Ix>) -> Option<&W>;
     fn component_weight(&self, v: VertexIndex<Ix>) -> Option<&W>;
+    fn adjust_vertex_weight(&mut self, v: VertexIndex<Ix>, f: &Fn(&mut W));
 }

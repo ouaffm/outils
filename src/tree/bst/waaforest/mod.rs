@@ -1,9 +1,9 @@
 use slab;
 use std::ops::{Index, IndexMut};
-use tree::{Tgf, WeightedTree};
 use tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
 use tree::traversal::{BinaryPreOrderIndices, Traversable};
-use types::{DefaultWeightType, NodeIndex, Values, ValueType, WeightType};
+use tree::WeightedTree;
+use types::{DefaultWeightType, NodeIndex, Tgf, Values, ValueType, WeightType};
 
 #[cfg(test)]
 mod tests;

@@ -56,6 +56,58 @@ fn test_big_insert_and_delete() {
 }
 
 #[test]
+fn test_big_insert_and_disconnect() {
+    let mut dyn: DynamicGraph<usize> = DynamicGraph::new(50, 3);
+    let mut edges = Vec::new();
+    for i in 0..9 {
+        dyn.insert_edge(VertexIndex(i), VertexIndex(i + 1)).unwrap();
+        assert!(validate(&dyn));
+    }
+    for i in 1..4 {
+        dyn.insert_edge(VertexIndex(i), VertexIndex(i * 2)).unwrap();
+        assert!(validate(&dyn));
+    }
+    for i in 11..19 {
+        dyn.insert_edge(VertexIndex(i), VertexIndex(i + 1)).unwrap();
+        assert!(validate(&dyn));
+    }
+    for i in 1..4 {
+        dyn.insert_edge(VertexIndex(i + 10), VertexIndex((i * 2) + 10)).unwrap();
+        assert!(validate(&dyn));
+    }
+    for i in 21..29 {
+        dyn.insert_edge(VertexIndex(i), VertexIndex(i + 1)).unwrap();
+        assert!(validate(&dyn));
+    }
+    for i in 1..4 {
+        edges.push(dyn.insert_edge(VertexIndex(i + 20), VertexIndex((i * 2) + 20)).unwrap());
+        assert!(validate(&dyn));
+    }
+    for i in 31..39 {
+        dyn.insert_edge(VertexIndex(i), VertexIndex(i + 1)).unwrap();
+        assert!(validate(&dyn));
+    }
+    for i in 1..4 {
+        dyn.insert_edge(VertexIndex(i + 30), VertexIndex((i * 2) + 30)).unwrap();
+        assert!(validate(&dyn));
+    }
+    dyn.disconnect_component(VertexIndex(4));
+    assert!(validate(&dyn));
+    dyn.disconnect_component(VertexIndex(15));
+    assert!(validate(&dyn));
+    dyn.disconnect_component(VertexIndex(26));
+    assert!(validate(&dyn));
+    dyn.disconnect_component(VertexIndex(37));
+    assert!(validate(&dyn));
+
+    assert!(dyn.edges.edges.len() == 0);
+    assert!(dyn.ext_euler.forest.node_count() == 50);
+    for i in 0..dyn.max_level + 1 {
+        assert!(dyn.euler[i].forest.node_count() == 50);
+    }
+}
+
+#[test]
 fn test_big_random_insert_and_delete() {
     let mut dyn: DynamicGraph<usize> = DynamicGraph::new(20, 10);
     let mut edges = Vec::new();

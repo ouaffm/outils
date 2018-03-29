@@ -21,7 +21,7 @@ enum EdgeDirection {
 
 type BalancedForest<W> = WeightedAaForest<EulerVertex, VertexWeight<W>>;
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
 struct VertexWeight<W>
 where
     W: WeightType,
@@ -174,7 +174,7 @@ impl IndexMut<EdgeIndex> for DynamicEdgeList {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Hash)]
 struct EulerVertex {
     vertex: VertexIndex,
     half_edge_index: [Option<usize>; 2],
@@ -777,6 +777,27 @@ where
             ),
         )
     }
+
+    fn disconnect_component(
+        &mut self,
+        v: VertexIndex,
+    ) -> Vec<(EdgeIndex, VertexIndex, VertexIndex)> {
+        let edges: Vec<(EdgeIndex, VertexIndex, VertexIndex)> = self.component_edges(v).collect();
+        for e in &edges {
+            if self.edges[e.0].is_tree_edge {
+                if size_of::<W>() > 0 {
+                    self.delete_tree_edge(e.0);
+                    self.ext_euler.cut(e.0, &self.edges);
+                } else {
+                    self.delete_tree_edge(e.0);
+                }
+            } else {
+                self.delete_non_tree_edge(e.0);
+            }
+            self.edges.remove(e.0);
+        }
+        edges
+    }
 }
 
 impl<W> DynamicWeightedComponent<W> for DynamicGraph<W>
@@ -815,6 +836,15 @@ where
             }
         }
         None
+    }
+
+    fn adjust_vertex_weight(&mut self, v: VertexIndex, f: &Fn(&mut W)) {
+        if size_of::<W>() > 0 {
+            let n = self.ext_euler.vertices[v].active_node;
+            self.ext_euler
+                .forest
+                .adjust_weight(n, &|w: &mut VertexWeight<W>| f(&mut w.weight));
+        }
     }
 }
 

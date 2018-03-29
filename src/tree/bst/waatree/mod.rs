@@ -2,10 +2,10 @@ use slab;
 use std::cmp::Ordering;
 use std::iter::empty;
 use std::ops::{Index, IndexMut};
-use tree::{Tgf, WeightedTree};
 use tree::bst::{BinarySearchTree, BstDirection, OrderedTree};
 use tree::traversal::{BinaryInOrder, BinaryInOrderIndices, Traversable};
-use types::{DefaultWeightType, Keys, KeyType, NodeIndex, Values, ValueType, WeightType};
+use tree::WeightedTree;
+use types::{DefaultWeightType, Keys, KeyType, NodeIndex, Tgf, Values, ValueType, WeightType};
 
 #[cfg(test)]
 mod tests;
@@ -307,6 +307,7 @@ where
             }
         }
     }
+
     fn next_from_subtree(&self, node: usize, dir: BstDirection) -> usize {
         let mut parent = self.arena[node][dir];
         let mut child;

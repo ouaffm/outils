@@ -4,7 +4,7 @@ use rand::Rng;
 use std::cmp::Ordering;
 use super::AaTree;
 use super::BinarySearchTree;
-use tree::Tgf;
+use types::Tgf;
 
 #[test]
 fn test_api() {
