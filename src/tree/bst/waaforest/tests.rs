@@ -8,10 +8,10 @@ use types::Tgf;
 #[test]
 fn test_api() {
     let mut tree: WeightedAaForest<i64> = WeightedAaForest::new(6);
-    let n0 = tree.insert(0);
+    let _n0 = tree.insert(0);
     let n1 = tree.insert(1);
     let n2 = tree.insert(2);
-    let n3 = tree.insert(3);
+    let _n3 = tree.insert(3);
     assert!(tree.remove(n2) == Some(2));
 
     let nodes = vec![n2, NodeIndex(0), NodeIndex(10)];

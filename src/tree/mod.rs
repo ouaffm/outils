@@ -14,8 +14,8 @@ where
 {
     /// Set the weight of the tree node indexed by `node` to `weight` and update the subweight
     /// of this node as well as the subweights of the nodes on the path from this node to the tree
-    /// root.
-    fn set_weight(&mut self, node: NodeIndex<Ix>, weight: W);
+    /// root. If `node` was a valid index, the old weight is returned.
+    fn set_weight(&mut self, node: NodeIndex<Ix>, weight: W) -> Option<W>;
 
     /// Immutably access the weight of the tree node indexed by `node`.
     fn weight(&self, node: NodeIndex<Ix>) -> Option<&W>;
@@ -23,8 +23,9 @@ where
     /// Immutably access the subweight of the tree node indexed by `node`.
     fn subweight(&self, node: NodeIndex<Ix>) -> Option<&W>;
 
-    /// Change the weight of tree node indexed by `node` by applying the closure `f`. After applying
-    /// the closure, the subweight of this node as well as the subweights of the nodes on the path
-    /// from this node to the tree root will be updated accordingly.
-    fn adjust_weight(&mut self, node: NodeIndex<Ix>, f: &Fn(&mut W));
+    /// Change the weight of the tree node indexed by `node` by applying the closure `f`. After
+    /// applying the closure, the subweight of this node as well as the subweights of the nodes on
+    /// the path from this node to the tree root will be updated accordingly. If `node` was a valid
+    /// index a reference to the changed weight is returned.
+    fn adjust_weight(&mut self, node: NodeIndex<Ix>, f: &Fn(&mut W)) -> Option<&W>;
 }

@@ -72,7 +72,8 @@ fn test_big_insert_and_disconnect() {
         assert!(validate(&dyn));
     }
     for i in 1..4 {
-        dyn.insert_edge(VertexIndex(i + 10), VertexIndex((i * 2) + 10)).unwrap();
+        dyn.insert_edge(VertexIndex(i + 10), VertexIndex((i * 2) + 10))
+            .unwrap();
         assert!(validate(&dyn));
     }
     for i in 21..29 {
@@ -80,7 +81,10 @@ fn test_big_insert_and_disconnect() {
         assert!(validate(&dyn));
     }
     for i in 1..4 {
-        edges.push(dyn.insert_edge(VertexIndex(i + 20), VertexIndex((i * 2) + 20)).unwrap());
+        edges.push(
+            dyn.insert_edge(VertexIndex(i + 20), VertexIndex((i * 2) + 20))
+                .unwrap(),
+        );
         assert!(validate(&dyn));
     }
     for i in 31..39 {
@@ -88,7 +92,8 @@ fn test_big_insert_and_disconnect() {
         assert!(validate(&dyn));
     }
     for i in 1..4 {
-        dyn.insert_edge(VertexIndex(i + 30), VertexIndex((i * 2) + 30)).unwrap();
+        dyn.insert_edge(VertexIndex(i + 30), VertexIndex((i * 2) + 30))
+            .unwrap();
         assert!(validate(&dyn));
     }
     dyn.disconnect_component(VertexIndex(4));

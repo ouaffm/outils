@@ -30,7 +30,7 @@ where
     /// Mutably access the value stored in the tree node indexed by `node`.
     fn value_mut(&mut self, node: NodeIndex<Ix>) -> Option<&mut V>;
 
-    /// Returns the index of arent node tree node indexed by `node`.
+    /// Returns the index of parent node tree node indexed by `node`.
     fn parent(&self, node: NodeIndex<Ix>) -> Option<NodeIndex<Ix>>;
 
     /// Returns the index of the child node at position `pos` of  the tree node indexed by `node`.
@@ -83,7 +83,7 @@ where
     pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         let rt = tree.root(node);
         BinaryInOrderIndices {
-            tree: tree,
+            tree,
             current: rt,
             stack: Vec::new(),
             size_hint: (0, None),
@@ -102,7 +102,7 @@ where
         let rt = tree.root(node);
         let stack_hint = (size_hint as f64).log2().floor() as usize;
         BinaryInOrderIndices {
-            tree: tree,
+            tree,
             current: rt,
             stack: Vec::with_capacity(stack_hint),
             size_hint: (0, Some(size_hint)),
@@ -262,7 +262,7 @@ where
         let mut v = Vec::new();
         tree.root(node).map(|rt| v.push(rt));
         BinaryPreOrderIndices {
-            tree: tree,
+            tree,
             stack: v,
             size_hint: (0, None),
         }
@@ -281,7 +281,7 @@ where
         let mut v = Vec::with_capacity(stack_hint);
         tree.root(node).map(|rt| v.push(rt));
         BinaryPreOrderIndices {
-            tree: tree,
+            tree,
             stack: v,
             size_hint: (0, Some(size_hint)),
         }
@@ -439,7 +439,7 @@ where
     pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         let rt = tree.root(node);
         BinaryPostOrderIndices {
-            tree: tree,
+            tree,
             current: rt,
             stack: Vec::new(),
             size_hint: (0, None),
@@ -458,7 +458,7 @@ where
         let rt = tree.root(node);
         let stack_hint = (size_hint as f64).log2().floor() as usize;
         BinaryPostOrderIndices {
-            tree: tree,
+            tree,
             current: rt,
             stack: Vec::with_capacity(stack_hint),
             size_hint: (0, Some(size_hint)),
@@ -639,7 +639,7 @@ where
         let mut v = Vec::new();
         tree.root(node).map(|rt| v.push(rt));
         GeneralDfsIndices {
-            tree: tree,
+            tree,
             stack: v,
             size_hint: (0, None),
         }
@@ -657,7 +657,7 @@ where
         let mut v = Vec::with_capacity(size_hint);
         tree.root(node).map(|rt| v.push(rt));
         GeneralDfsIndices {
-            tree: tree,
+            tree,
             stack: v,
             size_hint: (0, Some(size_hint)),
         }
@@ -817,7 +817,7 @@ where
         let mut v = VecDeque::new();
         tree.root(node).map(|rt| v.push_front(rt));
         GeneralBfsIndices {
-            tree: tree,
+            tree,
             queue: v,
             size_hint: (0, None),
         }
@@ -835,7 +835,7 @@ where
         let mut v = VecDeque::with_capacity(size_hint);
         tree.root(node).map(|rt| v.push_front(rt));
         GeneralBfsIndices {
-            tree: tree,
+            tree,
             queue: v,
             size_hint: (0, Some(size_hint)),
         }

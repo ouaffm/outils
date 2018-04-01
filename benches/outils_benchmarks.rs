@@ -1,3 +1,5 @@
+#![allow(clippy)]
+
 #[macro_use]
 extern crate bencher;
 #[macro_use]
@@ -43,7 +45,7 @@ lazy_static! {
     };
 }
 
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Default, Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct UsizeBoolWeight {
     weight: usize,
     flag: bool,
@@ -75,7 +77,7 @@ impl AddAssign for UsizeBoolWeight {
     }
 }
 
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Default, Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct Usize2Weight {
     weight: [usize; 2],
 }
@@ -110,12 +112,12 @@ impl AddAssign for Usize2Weight {
     }
 }
 
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Default, Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct BitboardWeight {
     blocks: [u64; 6],
 }
 
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Default, Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct CombinedWeight {
     weight1: UsizeBoolWeight,
     weight2: Usize2Weight,
@@ -362,7 +364,7 @@ fn dynconn_big_insert_delete(bench: &mut Bencher) {
 fn dynconn_big_insert_delete_ext_weight(bench: &mut Bencher) {
     let mut dyn: DynamicGraph<BitboardWeight> = DynamicGraph::new(100, 100);
     for i in 0..100 {
-        dyn.set_vertex_weight(VertexIndex(i), BITBOARD_WEIGHTS[i])
+        dyn.set_vertex_weight(VertexIndex(i), BITBOARD_WEIGHTS[i]);
     }
     let mut edges = Vec::with_capacity(10_000);
 

@@ -1,3 +1,7 @@
+//!
+//! `DynamicGraph<W>` is graph data structure providing fully-dynamic connectivity with support
+//! for vertex and component weights.
+//!
 use graph::dynconn::{DynamicComponent, DynamicConnectivity, DynamicWeightedComponent};
 use slab::Slab;
 use std::marker::PhantomData;
@@ -8,7 +12,7 @@ use tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
 use tree::bst::waaforest::WeightedAaForest;
 use tree::traversal::Traversable;
 use tree::WeightedTree;
-use types::{EdgeIndex, Edges, EmptyWeight, NodeIndex, Values, VertexIndex, WeightType};
+use types::{Edge, EdgeIndex, Edges, EmptyWeight, NodeIndex, Values, VertexIndex, WeightType};
 
 #[cfg(test)]
 mod tests;
@@ -37,8 +41,8 @@ where
 {
     fn new(adj_count: usize, act_count: usize) -> Self {
         VertexWeight {
-            adj_count: adj_count,
-            act_count: act_count,
+            adj_count,
+            act_count,
             weight: W::default(),
         }
     }
@@ -134,8 +138,8 @@ impl DynamicEdge {
         DynamicEdge {
             level: 0,
             is_tree_edge: false,
-            src: src,
-            dst: dst,
+            src,
+            dst,
         }
     }
 }
@@ -174,6 +178,19 @@ impl IndexMut<EdgeIndex> for DynamicEdgeList {
     }
 }
 
+impl Index<Edge> for DynamicEdgeList {
+    type Output = DynamicEdge;
+    fn index(&self, index: Edge) -> &Self::Output {
+        &self.edges[index.index().index()]
+    }
+}
+
+impl IndexMut<Edge> for DynamicEdgeList {
+    fn index_mut(&mut self, index: Edge) -> &mut DynamicEdge {
+        &mut self.edges[index.index().index()]
+    }
+}
+
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Hash)]
 struct EulerVertex {
     vertex: VertexIndex,
@@ -183,7 +200,7 @@ struct EulerVertex {
 impl EulerVertex {
     fn new(vertex: VertexIndex) -> Self {
         EulerVertex {
-            vertex: vertex,
+            vertex,
             half_edge_index: [None, None],
         }
     }
@@ -211,7 +228,7 @@ struct EulerHalfEdge {
 impl EulerHalfEdge {
     fn new(edge: EdgeIndex, incoming: NodeIndex, outgoing: NodeIndex) -> Self {
         EulerHalfEdge {
-            edge: edge,
+            edge,
             nodes: [incoming, outgoing],
         }
     }
@@ -256,17 +273,18 @@ where
 {
     fn new(size: usize, adjacency_hint: usize) -> Self {
         let mut vertices = DynamicVertexList::new(size);
-        let mut forest = BalancedForest::new((size * 2) - 1);
+        let mut forest = if size > 0 {
+            BalancedForest::new((size * 2) - 1)
+        } else {
+            BalancedForest::new(0)
+        };
         for _ in 0..size {
             let v = vertices.insert(DynamicVertex::new(adjacency_hint));
             let n = forest.insert(EulerVertex::new(v));
             forest.set_weight(n, VertexWeight::new(0, 1));
             vertices[v].active_node = n;
         }
-        EulerForest {
-            vertices: vertices,
-            forest: forest,
-        }
+        EulerForest { vertices, forest }
     }
 
     fn create_vertex(&mut self, v: EulerVertex) -> NodeIndex {
@@ -312,8 +330,8 @@ where
 
     fn adjacent_edge_index(&self, v: VertexIndex, e: EdgeIndex) -> Option<usize> {
         let adj = &self.vertices[v].adj_edges;
-        for i in 0..adj.len() {
-            if adj[i] == e {
+        for (i, edge) in adj.iter().enumerate() {
+            if *edge == e {
                 return Some(i);
             }
         }
@@ -554,6 +572,80 @@ where
     }
 }
 
+/// `DynamicGraph<W>` is general graph data structure providing deterministic fully-dynamic
+/// connectivity for a graph with a fixed set of vertices.
+///
+/// That is, operations are provided answer queries as to whether two vertices are
+/// connected in a graph through a path of edges. In this context, _fully dynamic_ means that the
+/// graph can be updated by insertions or deletions of edges through the provided operations
+/// between queries (see also [Dynamic Connectivity][1]).
+///
+/// The data structure also supports vertex weights of type `W`, dynamically maintaining the
+/// total weight of connected components after insertion or deletion of edges.
+///
+/// The principal operations for a graph `G = (V, E)` with `|V| = n` have a poly-logarithmic
+/// run-time cost:
+///
+/// - [`insert_edge`](#method.insert_edge): O(log^2 (n))
+/// - [`delete_edge`](#method.delete_edge): O(log^2 (n))
+/// - [`is_connected`](#method.insert_connected): O(log(n))
+///
+/// The space requirement of the data structure is O(log(n) * n).
+///
+/// This is achieved maintaining the [spanning forest][2] of the graph under insertions and
+/// deletions of edges. The complexity in maintaining a spanning forest lies in the fact that the
+/// deletion of an edge might split a tree in the spanning forest into two trees but not disconnect
+/// the connected component. In this situation, the algorithm must try to reconnect the trees by
+/// finding a replacement edge - the component is only accepted to have been disconnected by the
+/// edge deletion if no replacement edge has been found.
+///
+/// In order to efficiently search for replacement edges, this data structure utilises the
+/// [level structure][3], trading-off time for memory. The implemented version is outlined by
+/// Holm, de Lichtenberg and Thorup in [Poly-Logarithmic Deterministic Fully-Dynamic Algorithms][4].
+///
+/// **Note:** The above-mentioned trade-off of time against memory does not affect the storage of
+/// vertex weights. Vertex and component weights are not managed within the level structure, and
+/// therefore have a constant additional space requirement of O(n).
+///
+/// The usage of `DynamicGraph<W>` is straight-forward:
+///
+/// ```
+/// use outils::prelude::*;
+///
+/// // Construct a unweighted dynamic graph with a fixed number of 10 vertices with an expected
+/// // degree (i.e. number of adjacent edges) of 3.
+/// let mut graph: DynamicGraph<EmptyWeight> = DynamicGraph::new(10, 3);
+///
+/// let a = VertexIndex(0);
+/// let b = VertexIndex(1);
+/// let c = VertexIndex(2);
+/// let d = VertexIndex(3);
+///
+/// // Create a cycle from a to d.
+/// let ab = graph.insert_edge(a, b).expect("No reason to fail here");
+/// let bc = graph.insert_edge(b, c).expect("No reason to fail here");
+/// let cd = graph.insert_edge(c, d).expect("No reason to fail here");
+/// let da = graph.insert_edge(d, a).expect("No reason to fail here");
+///
+/// // a and c should be connected:
+/// assert!(graph.is_connected(a, c));
+///
+/// graph.delete_edge(bc);
+///
+/// // a and c should still be connected:
+/// assert!(graph.is_connected(a, c));
+///
+/// graph.delete_edge(da);
+///
+/// // NOW a and c should not be connected anymore:
+/// assert!(!graph.is_connected(a, c));
+/// ```
+///
+/// [1]: https://en.wikipedia.org/wiki/Dynamic_connectivity
+/// [2]: https://en.wikipedia.org/wiki/Spanning_tree#Spanning_forests
+/// [3]: https://en.wikipedia.org/wiki/Dynamic_connectivity#The_Level_structure
+/// [4]: http://www.cs.princeton.edu/courses/archive/fall09/cos521/Handouts/polylogarithmic.pdf
+///
 #[derive(Clone, Debug)]
 pub struct DynamicGraph<W = EmptyWeight>
 where
@@ -571,6 +663,16 @@ impl<W> DynamicGraph<W>
 where
     W: WeightType,
 {
+    /// Construct a `DynamicGraph` with a fixed number of vertices, i.e. `size` and with an expected
+    /// degree (i.e. number of adjacent edges) of `adjacency_hint.
+    ///
+    /// For a given value of `size`, the `DynamicGraph` will accept the vertex indices from
+    /// `VertexIndex(0)` to `VertexIndex(size-1)`. Values outside this range will be ignored by
+    /// the methods taking a `VertexIndex`. Those methods, however, will not `panic` in this case
+    /// but rather return `None`.
+    ///
+    /// Capacity to store edges incident to each vertex will be reserved according to the specified
+    /// value of `adjacency_hint`. Re-allocation will occur if this capacity is exceeded.
     pub fn new(size: usize, adjacency_hint: usize) -> Self {
         let max_level = (size as f64).log2().floor() as usize;
 
@@ -585,21 +687,30 @@ where
         let ext_euler = EulerForest::new(ext_size, adjacency_hint);
 
         DynamicGraph {
-            size: size,
-            adjacency_hint: adjacency_hint,
-            max_level: max_level,
-            edges: edges,
-            euler: euler,
-            ext_euler: ext_euler,
+            size,
+            adjacency_hint,
+            max_level,
+            edges,
+            euler,
+            ext_euler,
         }
     }
 
+    /// Returns the number of levels in the level structure of the HDT algorithm, that is
+    /// for a graph `G = (V, E)`  with `|V| = n`, the number of levels will be
+    /// `floor(log(n))`.
     pub fn max_level(&self) -> usize {
         self.max_level
     }
+
+    /// Returns the number of vertices of this graph, that is for a graph `G = (V, E)`
+    /// this method will return `|V| = n`.
     pub fn size(&self) -> usize {
         self.size
     }
+
+    /// Returns the _initial_ capacity to store edges incident to each vertex
+    /// (see also: [`new`](#method.new)).
     pub fn adjacency_hint(&self) -> usize {
         self.adjacency_hint
     }
@@ -696,7 +807,34 @@ impl<W> DynamicConnectivity<W> for DynamicGraph<W>
 where
     W: WeightType,
 {
-    fn insert_edge(&mut self, v: VertexIndex, w: VertexIndex) -> Option<EdgeIndex> {
+    /// Connects the vertices indexed by `v` and `w` and returns the index of the created edge.
+    ///
+    /// If the vertices cannot be connected `None` is returned. Vertices cannot be connected if
+    /// `v` and `w` are equal or if either of them denotes an index greater or equal the
+    /// [`size`](#method.size) of the `DynamicGraph`.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// // Construct a unweighted dynamic graph with a fixed number of 10 vertices with an expected
+    /// // degree (i.e. number of adjacent edges) of 3.
+    /// let mut graph: DynamicGraph<EmptyWeight> = DynamicGraph::new(10, 3);
+    ///
+    /// let a = VertexIndex(0);
+    /// let b = VertexIndex(1);
+    /// let c = VertexIndex(999); // Invalid vertex index!
+    ///
+    /// // Connect a and b:
+    /// let ab = graph.insert_edge(a, b);
+    /// assert!(ab.is_some());
+    /// assert!(graph.is_connected(a, b));
+    ///
+    /// // Attempt to connect a and c, which is a vertex index greater than the size of the graph:
+    /// let ac = graph.insert_edge(a, c);
+    /// assert!(ac.is_none());
+    /// assert!(!graph.is_connected(a, c));
+    /// ```
+    fn insert_edge(&mut self, v: VertexIndex, w: VertexIndex) -> Option<Edge> {
         if v == w || v.index() >= self.size || w.index() >= self.size {
             return None;
         }
@@ -709,27 +847,43 @@ where
                 self.ext_euler.link(e, &self.edges);
             }
         }
-        Some(e)
+        Some(Edge::new(e, v, w))
     }
 
-    fn delete_edge(&mut self, e: EdgeIndex) {
-        if self.edges[e].is_tree_edge {
+    /// Deletes the edge `e` from the graph if it exists.
+    ///
+    /// **Note:** Usually, `e` should be an instance of an `Edge` that has been previously returned
+    /// by [`insert_edge`](#method.insert_edge) and has not yet been deleted. This method will
+    /// ignore any `Edge` passed to it that is not equal to an instance stored internally.
+    fn delete_edge(&mut self, e: Edge) {
+        let idx = e.index();
+        if !self.edges.edges.contains(idx.index()) || self.edges[idx].src != e.src()
+            || self.edges[idx].dst != e.dst()
+            {
+                return;
+            }
+        if self.edges[idx].is_tree_edge {
             if size_of::<W>() > 0 {
-                self.delete_tree_edge(e);
-                self.ext_euler.cut(e, &self.edges);
-                self.replace(e)
+                self.delete_tree_edge(idx);
+                self.ext_euler.cut(idx, &self.edges);
+                self.replace(idx)
                     .map(|edge| self.ext_euler.link(edge, &self.edges));
             } else {
-                self.delete_tree_edge(e);
-                self.replace(e);
+                self.delete_tree_edge(idx);
+                self.replace(idx);
             }
         } else {
-            self.delete_non_tree_edge(e);
+            self.delete_non_tree_edge(idx);
         }
-        self.edges.remove(e);
+        self.edges.remove(idx);
     }
 
+    /// Returns `true` if the two vertices indexed by `v` and `w` are connected in `self` through
+    /// a path of edges.
     fn is_connected(&self, v: VertexIndex, w: VertexIndex) -> bool {
+        if v == w || v.index() >= self.size || w.index() >= self.size {
+            return false;
+        }
         self.euler[0].is_connected(v, w)
     }
 }
@@ -738,6 +892,31 @@ impl<'dyn, W> DynamicComponent<'dyn> for DynamicGraph<W>
 where
     W: WeightType,
 {
+    /// Returns a boxed iterator over the indices of the vertices which are connected to the
+    /// vertex indexed by `v`.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// // Construct a unweighted dynamic graph with a fixed number of 10 vertices with an expected
+    /// // degree (i.e. number of adjacent edges) of 3.
+    /// let mut graph: DynamicGraph<EmptyWeight> = DynamicGraph::new(10, 3);
+    ///
+    /// let a = VertexIndex(0);
+    /// let b = VertexIndex(1);
+    /// let c = VertexIndex(2);
+    /// let d = VertexIndex(3);
+    ///
+    /// // Connect a and b and c:
+    /// let ab = graph.insert_edge(a, b);
+    /// let ac = graph.insert_edge(a, c);
+    ///
+    /// let vertices: Vec<VertexIndex> = graph.component_vertices(b).collect();
+    /// assert!(vertices.contains(&a));
+    /// assert!(vertices.contains(&b));
+    /// assert!(vertices.contains(&c));
+    /// assert!(!vertices.contains(&d)); // d is not part of the component b belongs to!
+    /// ```
     fn component_vertices(&'dyn self, v: VertexIndex) -> Box<Iterator<Item = VertexIndex> + 'dyn> {
         Box::new(Vertices::new(
             &self.euler[0],
@@ -745,6 +924,36 @@ where
         ))
     }
 
+    /// Returns a boxed iterator over vertices that are representatives of connected components.
+    /// This implies that no vertices returned by this iterator are connected to each other.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// // Construct a unweighted dynamic graph with a fixed number of 7 vertices with an expected
+    /// // degree (i.e. number of adjacent edges) of 3.
+    /// let mut graph: DynamicGraph<EmptyWeight> = DynamicGraph::new(7, 3);
+    ///
+    /// let a = VertexIndex(0);
+    /// let b = VertexIndex(1);
+    /// let c = VertexIndex(2);
+    /// let d = VertexIndex(3);
+    /// let e = VertexIndex(4);
+    /// let f = VertexIndex(5);
+    /// let g = VertexIndex(6);
+    ///
+    /// //Create four components: {a, b}, {c, d}, {e, f} and {g}
+    /// graph.insert_edge(a, b);
+    /// graph.insert_edge(c, d);
+    /// graph.insert_edge(e, f);
+    ///
+    /// // Expect exactly one vertex of each component to be included by the components iterator:
+    /// let vertices: Vec<VertexIndex> = graph.components().collect();
+    /// assert!(vertices.contains(&a) || vertices.contains(&b));
+    /// assert!(vertices.contains(&c) || vertices.contains(&d));
+    /// assert!(vertices.contains(&e) || vertices.contains(&f));
+    /// assert!(vertices.contains(&g));
+    /// ```
     fn components(&'dyn self) -> Box<Iterator<Item=VertexIndex> + 'dyn> {
         Box::new(
             self.euler[0]
@@ -755,10 +964,47 @@ where
         )
     }
 
-    fn component_edges(
-        &'dyn self,
-        v: VertexIndex,
-    ) -> Box<Iterator<Item = (EdgeIndex, VertexIndex, VertexIndex)> + 'dyn> {
+    /// Returns a boxed iterator over the indices of the edges which connect the component the
+    /// vertex indexed by `v` is part of.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// // Construct a unweighted dynamic graph with a fixed number of 10 vertices with an expected
+    /// // degree (i.e. number of adjacent edges) of 3.
+    /// let mut graph: DynamicGraph<EmptyWeight> = DynamicGraph::new(10, 3);
+    ///
+    /// let a = VertexIndex(0);
+    /// let b = VertexIndex(1);
+    /// let c = VertexIndex(2);
+    /// let d = VertexIndex(3);
+    /// let e = VertexIndex(4);
+    /// let f = VertexIndex(5);
+    /// let g = VertexIndex(6);
+    ///
+    /// //Create component: {a, b, c, d}
+    /// let ab = graph.insert_edge(a, b).expect("No reason to fail here");
+    /// let bc = graph.insert_edge(b, c).expect("No reason to fail here");
+    /// let bd = graph.insert_edge(b, d).expect("No reason to fail here");
+    /// let da = graph.insert_edge(a, b).expect("No reason to fail here"); // Non-spanning edge!
+    ///
+    /// //Create component: {e, f, g}
+    /// let ef = graph.insert_edge(e, f).expect("No reason to fail here");
+    /// let gf = graph.insert_edge(g, f).expect("No reason to fail here");
+    /// let eg = graph.insert_edge(e, g).expect("No reason to fail here"); // Non-spanning edge!
+    ///
+    /// let abcd_edges: Vec<Edge> = graph.component_edges(a).collect();
+    /// assert!(abcd_edges.contains(&ab));
+    /// assert!(abcd_edges.contains(&bc));
+    /// assert!(abcd_edges.contains(&bd));
+    /// assert!(abcd_edges.contains(&da));
+    ///
+    /// let efg_edges: Vec<Edge> = graph.component_edges(e).collect();
+    /// assert!(efg_edges.contains(&ef));
+    /// assert!(efg_edges.contains(&gf));
+    /// assert!(efg_edges.contains(&eg));
+    /// ```
+    fn component_edges(&'dyn self, v: VertexIndex) -> Box<Iterator<Item=Edge> + 'dyn> {
         Box::new(
             Vertices::new(&self.euler[0], self.euler[0].vertices[v].active_node).flat_map(
                 move |v| {
@@ -769,32 +1015,69 @@ where
                         .chain(
                             self.euler
                                 .iter()
-                                .flat_map(move |f| f.vertices[v].adj_edges.iter().map(|e| *e)),
+                                .flat_map(move |f| f.vertices[v].adj_edges.iter().cloned()),
                         )
-                        .map(move |e| (e, self.edges[e].src, self.edges[e].dst))
-                        .filter(move |t| t.1 == v)
+                        .map(move |e| Edge::new(e, self.edges[e].src, self.edges[e].dst))
+                        .filter(move |t| t.src() == v)
                 },
             ),
         )
     }
 
-    fn disconnect_component(
-        &mut self,
-        v: VertexIndex,
-    ) -> Vec<(EdgeIndex, VertexIndex, VertexIndex)> {
-        let edges: Vec<(EdgeIndex, VertexIndex, VertexIndex)> = self.component_edges(v).collect();
+    /// Deletes all edges from this graph which connect the component the
+    /// vertex indexed by `v` is part of.
+    ///
+    /// Generally, this operation will be significantly faster than calling `delete_edge` on each
+    /// edge of the component separately, the reason being that it is not necessary to attempt to
+    /// to reconnect the component with replacement edges when it is known beforehand that every
+    /// edge of the component is going to be deleted.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// // Construct a unweighted dynamic graph with a fixed number of 10 vertices with an expected
+    /// // degree (i.e. number of adjacent edges) of 3.
+    /// let mut graph: DynamicGraph<EmptyWeight> = DynamicGraph::new(10, 3);
+    ///
+    /// let a = VertexIndex(0);
+    /// let b = VertexIndex(1);
+    /// let c = VertexIndex(2);
+    /// let d = VertexIndex(3);
+    ///
+    /// //Create component: {a, b, c, d}
+    /// let ab = graph.insert_edge(a, b).expect("No reason to fail here");
+    /// let bc = graph.insert_edge(b, c).expect("No reason to fail here");
+    /// let bd = graph.insert_edge(b, d).expect("No reason to fail here");
+    /// let da = graph.insert_edge(a, b).expect("No reason to fail here"); // Non-spanning edge!
+    ///
+    /// let abcd_edges: Vec<Edge> = graph.disconnect_component(a);
+    /// assert!(abcd_edges.contains(&ab));
+    /// assert!(abcd_edges.contains(&bc));
+    /// assert!(abcd_edges.contains(&bd));
+    /// assert!(abcd_edges.contains(&da));
+    ///
+    /// assert!(!graph.is_connected(a, b));
+    /// assert!(!graph.is_connected(a, c));
+    /// assert!(!graph.is_connected(a, d));
+    /// assert!(!graph.is_connected(b, c));
+    /// assert!(!graph.is_connected(b, d));
+    /// assert!(!graph.is_connected(c, d));
+    /// ```
+    fn disconnect_component(&mut self, v: VertexIndex) -> Vec<Edge> {
+        let edges: Vec<Edge> = self.component_edges(v).collect();
         for e in &edges {
-            if self.edges[e.0].is_tree_edge {
+            let idx = e.index();
+            if self.edges[idx].is_tree_edge {
                 if size_of::<W>() > 0 {
-                    self.delete_tree_edge(e.0);
-                    self.ext_euler.cut(e.0, &self.edges);
+                    self.delete_tree_edge(idx);
+                    self.ext_euler.cut(idx, &self.edges);
                 } else {
-                    self.delete_tree_edge(e.0);
+                    self.delete_tree_edge(idx);
                 }
             } else {
-                self.delete_non_tree_edge(e.0);
+                self.delete_non_tree_edge(idx);
             }
-            self.edges.remove(e.0);
+            self.edges.remove(idx);
         }
         edges
     }
@@ -804,17 +1087,34 @@ impl<W> DynamicWeightedComponent<W> for DynamicGraph<W>
 where
     W: WeightType,
 {
-    fn set_vertex_weight(&mut self, v: VertexIndex, weight: W) {
-        if size_of::<W>() > 0 {
+    /// Set the weight of the vertex indexed by `v` to `weight` and update the weight of the
+    /// component this vertex belongs to. If `v` was a valid index, the old weight is returned.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// // Construct a dynamic graph with weights of type usize and a fixed number of 10 vertices
+    /// // with an expected degree (i.e. number of adjacent edges) of 3.
+    /// let mut graph: DynamicGraph<usize> = DynamicGraph::new(10, 3);
+    ///
+    /// let a = VertexIndex(0);
+    /// assert_eq!(graph.set_vertex_weight(a, 2), Some(0));
+    /// ```
+    fn set_vertex_weight(&mut self, v: VertexIndex, weight: W) -> Option<W> {
+        if size_of::<W>() > 0 && v.index() < self.size {
             let n = self.ext_euler.vertices[v].active_node;
+            let old_weight = self.ext_euler.forest.weight(n).cloned();
             self.ext_euler
                 .forest
                 .adjust_weight(n, &|w: &mut VertexWeight<W>| (*w).weight = weight);
+            return old_weight.map(|w| w.weight);
         }
+        None
     }
 
+    /// Immutably access the weight of the vertex indexed by `v`.
     fn vertex_weight(&self, v: VertexIndex) -> Option<&W> {
-        if size_of::<W>() > 0 {
+        if size_of::<W>() > 0 && v.index() < self.size {
             let n = self.ext_euler.vertices[v].active_node;
             self.ext_euler.forest.weight(n).map(|w| &w.weight)
         } else {
@@ -822,8 +1122,36 @@ where
         }
     }
 
+    /// Immutably access the weight of the component to which the vertex indexed by `v` belongs.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// // Construct a dynamic graph with weights of type usize and a fixed number of 10 vertices
+    /// // with an expected degree (i.e. number of adjacent edges) of 3.
+    /// let mut graph: DynamicGraph<usize> = DynamicGraph::new(10, 3);
+    ///
+    /// let a = VertexIndex(0);
+    /// let b = VertexIndex(1);
+    /// let c = VertexIndex(2);
+    /// let d = VertexIndex(3);
+    ///
+    /// graph.set_vertex_weight(a, 1);
+    /// graph.set_vertex_weight(b, 1);
+    /// graph.set_vertex_weight(c, 1);
+    /// graph.set_vertex_weight(d, 1);
+    ///
+    /// // Create component {a, b, c, d} - since all vertices have a weight of 1, the resulting
+    /// // component should have a weight of 4.
+    /// let ab = graph.insert_edge(a, b).expect("No reason to fail here");
+    /// let bc = graph.insert_edge(b, c).expect("No reason to fail here");
+    /// let bd = graph.insert_edge(b, d).expect("No reason to fail here");
+    /// let da = graph.insert_edge(a, b).expect("No reason to fail here"); // Non-spanning edge!
+    ///
+    /// assert_eq!(graph.component_weight(a), Some(&4));
+    /// ```
     fn component_weight(&self, v: VertexIndex) -> Option<&W> {
-        if size_of::<W>() > 0 {
+        if size_of::<W>() > 0 && v.index() < self.size {
             let n = self.ext_euler.vertices[v].active_node;
             let root = self.ext_euler.forest.root(n);
             match root {
@@ -838,13 +1166,29 @@ where
         None
     }
 
-    fn adjust_vertex_weight(&mut self, v: VertexIndex, f: &Fn(&mut W)) {
-        if size_of::<W>() > 0 {
+    /// Change the weight of the vertex indexed by `v` by applying the closure `f`. After applying
+    /// the closure, the weight of the component this vertex belongs to will be updated accordingly.
+    /// If `v` was a valid index a reference to the changed weight is returned.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// // Construct a dynamic graph with weights of type usize and a fixed number of 10 vertices
+    /// // with an expected degree (i.e. number of adjacent edges) of 3.
+    /// let mut graph: DynamicGraph<usize> = DynamicGraph::new(10, 3);
+    ///
+    /// let a = VertexIndex(0);
+    /// assert_eq!(graph.adjust_vertex_weight(a, &|w: &mut usize| *w += 2), Some(&2));
+    /// ```
+    fn adjust_vertex_weight(&mut self, v: VertexIndex, f: &Fn(&mut W)) -> Option<&W> {
+        if size_of::<W>() > 0 && v.index() < self.size {
             let n = self.ext_euler.vertices[v].active_node;
-            self.ext_euler
+            return self.ext_euler
                 .forest
-                .adjust_weight(n, &|w: &mut VertexWeight<W>| f(&mut w.weight));
+                .adjust_weight(n, &|w: &mut VertexWeight<W>| f(&mut w.weight))
+                .map(|w| &w.weight);
         }
+        None
     }
 }
 
@@ -852,12 +1196,12 @@ impl<'slf, W> Edges<'slf> for DynamicGraph<W>
     where
         W: WeightType,
 {
-    fn edges(&'slf self) -> Box<Iterator<Item=(EdgeIndex, VertexIndex, VertexIndex)> + 'slf> {
+    fn edges(&'slf self) -> Box<Iterator<Item=Edge> + 'slf> {
         Box::new(
             self.edges
                 .edges
                 .iter()
-                .map(|(i, e)| (EdgeIndex(i), e.src, e.dst)),
+                .map(|(i, e)| Edge::new(EdgeIndex(i), e.src, e.dst)),
         )
     }
 }
@@ -931,7 +1275,7 @@ where
 {
     fn new(euler: &'dyn EulerForest<W>, node: NodeIndex) -> Self {
         Vertices {
-            euler: euler,
+            euler,
             state: VerticesState::new(euler, node),
         }
     }

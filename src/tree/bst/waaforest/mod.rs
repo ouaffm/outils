@@ -1,3 +1,6 @@
+//!
+//! `WeightedAaForest<V, W>` is a weighted balanced binary forest data structure.
+//!
 use slab;
 use std::ops::{Index, IndexMut};
 use tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
@@ -40,7 +43,7 @@ where
 
     fn new_leaf(value: V) -> Self {
         Node {
-            value: value,
+            value,
             weight: W::default(),
             subweight: W::default(),
             level: 1,
@@ -92,6 +95,52 @@ where
     }
 }
 
+/// `WeightedAaForest<V, W>` is a data structure for holding balanced binary trees. Its tree nodes
+/// are held in a [memory arena][1] and are addressed through their associated `NodeIndex`.
+///
+/// /// `AaForest` is parameterized over:
+/// - Associated values of type 'V', where 'V' must implement the trait [`ValueType`][2]
+/// - Associated node weights and subweights of type `W`, where `W` must implement
+///   the trait [`WeightType`][3].
+///
+/// The balancing method for maintaining a tree height of log(n) where n is the number nodes
+/// in the tree is described here: [AA tree][4].
+///
+/// Forest trees can be joined and split as required by the provided operations, which will
+/// also take care of the re-balancing of the trees. The in-order of the forest trees implies an
+/// ordered sequence of values - this order does not depend on the order traits of the type `V`
+/// (i.e. [`std::cmp::Ord`][5]) but solely on the in-order of the nodes which is under the control
+/// of the user (see the documentation of [`split`](#method.split) and [`append`](#method.append)).
+///
+/// ```
+/// use outils::prelude::*;
+/// use outils::tree::traversal::BinaryInOrderValues;
+/// let mut waaforest = WeightedAaForest::new(10);
+///
+/// // Insert values into the forest - each value will be a single-node tree in the forest.
+/// let n1 = waaforest.insert_weighted(1, 1);
+/// let n2 = waaforest.insert_weighted(2, 1);
+/// let n3 = waaforest.insert_weighted(3, 1);
+///
+/// // Link the single-node trees, constructing the in-order sequence 1,2,3.
+/// waaforest.append(n1, n2);
+/// waaforest.append(n2, n3);
+///
+/// let seq: Vec<&usize> = BinaryInOrderValues::new(&waaforest, n1).collect();
+/// assert_eq!(seq, vec![&1, &2, &3]);
+///
+/// // Because the tree constructed above contains three nodes with weight 1, the root of the
+/// // tree is expected to have a subweight of 3:
+/// let root = waaforest.root(n1).expect("The root of the tree should exist!");
+/// assert_eq!(waaforest.subweight(root), Some(&3));
+/// ```
+///
+/// [1]: https://en.wikipedia.org/wiki/Region-based_memory_management
+/// [2]: .types/trait.ValueType.html
+/// [3]: .types/trait.WeightType.html
+/// [4]: https://en.wikipedia.org/wiki/AA_tree
+/// [5]: https://doc.rust-lang.org/std/cmp/trait.Ord.html
+///
 #[derive(Clone, Debug)]
 pub struct WeightedAaForest<V, W = DefaultWeightType>
 where
@@ -109,6 +158,7 @@ where
     V: ValueType,
     W: WeightType,
 {
+    /// Construct a new empty `WeigthedAaForest` with an initial capacity of `size`.
     pub fn new(size: usize) -> Self {
         let mut a = slab::Slab::with_capacity(size + 3);
         let n = a.insert(Node::new());
@@ -221,6 +271,13 @@ where
         }
     }
 
+    /// Insert a new singleton node containing `value` into the forest and set its weight to `weight`.
+    pub fn insert_weighted(&mut self, value: V, weight: W) -> NodeIndex {
+        let n = NodeIndex(self.arena.insert(Node::new_leaf(value)));
+        self.set_weight(n, weight);
+        n
+    }
+
     fn init_dummy(&mut self, dummy: usize) {
         let dummy = dummy;
         self.arena[dummy].parent = self.nil;
@@ -276,7 +333,7 @@ where
                 BstDirection::Right
             };
             if parent_dir == other_dir {
-                return child;
+                return parent;
             }
             child = parent;
             parent = self.arena[child].parent;
@@ -508,10 +565,32 @@ where
     V: ValueType,
     W: WeightType,
 {
+    // Insert a new singleton node containing `value` into the forest and set its weight to `W::default()`.
     fn insert(&mut self, value: V) -> NodeIndex {
         NodeIndex(self.arena.insert(Node::new_leaf(value)))
     }
 
+    /// Removes the tree node indexed by `node` from the tree if present, in this case returning
+    /// the associated value.
+    ///
+    /// ```
+    /// use outils::prelude::*;                             // The resulting tree is shown below:
+    /// use outils::tree::traversal::BinaryInOrderValues;   //
+    ///                                                     //       -- (3) --
+    /// let mut waaforest = WeightedAaForest::new(10);      //      /         \
+    ///                                                     //    (1)         (5)
+    /// let mut indices = Vec::new();                       //   /   \       /   \
+    /// indices.push(waaforest.insert_weighted(0, 1));      // (0)   (2)    (4)   (6)
+    ///
+    /// for i in 1..7 {
+    ///     indices.push(waaforest.insert_weighted(i, 1));
+    ///     waaforest.append(indices[i-1], indices[i]);
+    /// }
+    ///
+    /// assert_eq!(waaforest.remove(indices[5]), Some(5));
+    /// let seq: Vec<&usize> = BinaryInOrderValues::new(&waaforest, indices[0]).collect();
+    /// assert_eq!(seq, vec![&0, &1, &2, &3, &4, &6]);
+    /// ```
     fn remove(&mut self, node: NodeIndex) -> Option<V> {
         let node = node.index();
         if node <= self.sdummy {
@@ -523,6 +602,69 @@ where
         Some(self.arena.remove(node).value)
     }
 
+    /// Splits the sequence of tree nodes represented by the forest tree containing the tree node
+    /// indexed by `node`.
+    ///
+    /// If `dir == BstDirection::Left`, `node` will index the last tree node of the left sequence,
+    /// while if `dir == BstDirection::Right`, `node` will index the first tree node of the right
+    /// sequence (both with respect to in-order). The roots of the resulting sequences will be
+    /// returned as a tuple.
+    ///
+    /// ```
+    /// use outils::prelude::*;                             // The resulting trees are shown below:
+    /// use outils::tree::traversal::BinaryInOrderValues;   //
+    ///                                                     //       -- (3) --
+    /// let mut waaforest1 = WeightedAaForest::new(10);     //      /         \
+    /// let mut waaforest2 = WeightedAaForest::new(10);     //    (1)         (5)
+    ///                                                     //   /   \       /   \
+    /// let mut indices1 = Vec::new();                      // (0)   (2)    (4)   (6)
+    /// indices1.push(waaforest1.insert_weighted(0, 1));
+    /// let mut indices2 = Vec::new();
+    /// indices2.push(waaforest2.insert_weighted(0, 1));
+    ///
+    /// for i in 1..7 {
+    ///     indices1.push(waaforest1.insert_weighted(i, 1));
+    ///     waaforest1.append(indices1[i-1], indices1[i]);
+    ///     indices2.push(waaforest2.insert_weighted(i, 1));
+    ///     waaforest2.append(indices2[i-1], indices2[i]);
+    /// }
+    ///
+    /// // Split the tree at 3 and keep 3 as part of the left (i.e. _smaller_) tree.
+    /// // Because every node of the tree constructed above has a weight of 1, the root of the
+    /// // left tree is expected to have a subweight of 4, the root of the right a subweight of 3:
+    /// let result1 = waaforest1.split(indices1[3], BstDirection::Left);
+    /// match(result1) {
+    ///     (Some(left), Some(right)) => {
+    ///         assert_eq!(waaforest1.subweight(left), Some(&4));
+    ///         let seq_left: Vec<&usize> = BinaryInOrderValues::new(&waaforest1, left).collect();
+    ///         assert_eq!(seq_left, vec![&0, &1, &2, &3]);
+    ///         assert_eq!(waaforest1.subweight(right), Some(&3));
+    ///         let seq_right: Vec<&usize> = BinaryInOrderValues::new(&waaforest1, right).collect();
+    ///         assert_eq!(seq_right, vec![&4, &5, &6]);
+    ///     }
+    ///     _ => {
+    ///         panic!("3 was neither first nor last, so the returned tuple should be (Some, Some)")
+    ///     }
+    /// }
+    ///
+    /// // Split the tree at 3 and keep 3 as part of the right (i.e. _bigger_) tree.
+    /// // Because every node of the tree constructed above has a weight of 1, the root of the
+    /// // left tree is expected to have a subweight of 3, the root of the right a subweight of 4:
+    /// let result2 = waaforest2.split(indices2[3], BstDirection::Right);
+    /// match(result2) {
+    ///     (Some(left), Some(right)) => {
+    ///         assert_eq!(waaforest2.subweight(left), Some(&3));
+    ///         let seq_left: Vec<&usize> = BinaryInOrderValues::new(&waaforest2, left).collect();
+    ///         assert_eq!(seq_left, vec![&0, &1, &2]);
+    ///         assert_eq!(waaforest2.subweight(right), Some(&4));
+    ///         let seq_right: Vec<&usize> = BinaryInOrderValues::new(&waaforest2, right).collect();
+    ///         assert_eq!(seq_right, vec![&3, &4, &5, &6]);
+    ///     }
+    ///     _ => {
+    ///         panic!("3 was neither first nor last, so the returned tuple should be (Some, Some)");
+    ///     }
+    /// }
+    /// ```
     fn split(
         &mut self,
         node: NodeIndex,
@@ -579,6 +721,43 @@ where
         (Some(NodeIndex(left)), Some(NodeIndex(right)))
     }
 
+    /// Splits the whole sequence of tree nodes represented by the forest tree containing the tree
+    /// node indexed by `node` into singleton (i.e. sole leaf) nodes. The subweights of the split nodes
+    /// will be adjusted accordingly.
+    ///
+    /// If the tree nodes to be split is known beforehand, it can be specified optionally as
+    /// the `size_hint` of the returned `Vec` containing the split tree nodes.
+    ///
+    /// Generally, this operation will be much faster than calling `split` on each node of the
+    /// sequence separately, the reason being that no re-balancing is necessary when it is known
+    /// beforehand that every tree node will be split.
+    ///
+    /// ```
+    /// use outils::prelude::*;                          // The resulting tree is shown below:
+    ///                                                  //
+    /// let mut waaforest = WeightedAaForest::new(10);   //       -- (3) --
+    ///                                                  //      /         \
+    /// let mut indices = Vec::new();                    //    (1)         (5)
+    /// indices.push(waaforest.insert_weighted(0, 1));   //   /   \       /   \
+    ///                                                  // (0)   (2)    (4)   (6)
+    /// for i in 1..7 {
+    ///     indices.push(waaforest.insert_weighted(i, 1));
+    ///     waaforest.append(indices[i-1], indices[i]);
+    /// }
+    ///
+    /// let split_nodes = waaforest.split_all(indices[0], Some(7));
+    /// assert_eq!(split_nodes.len(), indices.len());
+    ///
+    /// // After splitting the forest tree, every one of its former nodes should be a singleton.
+    /// // In particular, we expect the subweight of every node to equals its weight.
+    /// for i in 0..7 {
+    ///     assert!(split_nodes.contains(&indices[i]));
+    ///     assert_eq!(waaforest.weight(indices[i]), waaforest.subweight(indices[i]));
+    ///     assert_eq!(waaforest.parent(indices[i]), None);
+    ///     assert_eq!(waaforest.child(indices[i], 0), None);
+    ///     assert_eq!(waaforest.child(indices[i], 1), None);
+    /// }
+    /// ```
     fn split_all(&mut self, node: NodeIndex, size_hint: Option<usize>) -> Vec<NodeIndex> {
         let nodes: Vec<NodeIndex> = match size_hint {
             Some(s) => BinaryPreOrderIndices::with_capacity(self, node, s).collect(),
@@ -596,6 +775,57 @@ where
         nodes
     }
 
+    /// Concatenate the sequences of tree nodes represented by the forest trees containing the
+    /// tree nodes indexed by `node_u` and `node_v`, respectively.
+    ///
+    /// With respect to in-order, the former sequence will represent the _smaller_ part of the
+    /// new sequence, the latter sequence the _bigger_ part. The root of the resulting sequence will
+    /// be returned.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    /// use outils::tree::traversal::BinaryInOrderValues;
+    /// let mut waaforest = WeightedAaForest::new(10);
+    ///
+    /// // Insert values into the forest - each value will be a single-node tree in the forest.
+    /// let mut indices = Vec::new();
+    /// for i in 0..7 {
+    ///     indices.push(waaforest.insert_weighted(i, 1));
+    /// }
+    ///
+    /// // Construct the _smaller_ tree, containing the in-order sequence 0,1,2,3
+    /// let mut left = indices[0];
+    /// left = waaforest.append(left, indices[1]).expect("Result should not be None");
+    /// left = waaforest.append(left, indices[2]).expect("Result should not be None");
+    /// left = waaforest.append(left, indices[3]).expect("Result should not be None");
+    ///
+    /// { // Restrict scope of the borrow of `waaforest`.
+    ///     let seq: Vec<&usize> = BinaryInOrderValues::new(&waaforest, left).collect();
+    ///     assert_eq!(seq, vec![&0, &1, &2, &3]);
+    /// }
+    ///
+    /// // Construct the _bigger_ tree, containing the in-order sequence 4,5,6
+    /// let mut right = indices[4];
+    /// right = waaforest.append(right, indices[5]).expect("Result should not be None");
+    /// right = waaforest.append(right, indices[6]).expect("Result should not be None");
+    ///
+    /// { // Restrict scope of the borrow of `waaforest`.
+    ///     let seq: Vec<&usize> = BinaryInOrderValues::new(&waaforest, right).collect();
+    ///     assert_eq!(seq, vec![&4, &5, &6]);
+    /// }
+    ///
+    /// // Because every node of the trees constructed above has a weight of 1, the root of the
+    /// // left tree is expected to have a subweight of 4, the root of the right a subweight of 3:
+    /// assert_eq!(waaforest.subweight(left), Some(&4));
+    /// assert_eq!(waaforest.subweight(right), Some(&3));
+    ///
+    /// // Link left and right, constructing the in-order sequence 0,1,2,3,4,5,6. Afterwards, we
+    /// // expect the subweight of the new root to equal 7.
+    /// let root = waaforest.append(left, right).expect("Result should not be None");
+    /// assert_eq!(waaforest.subweight(root), Some(&7));
+    /// let seq: Vec<&usize> = BinaryInOrderValues::new(&waaforest, root).collect();
+    /// assert_eq!(seq, vec![&0, &1, &2, &3, &4, &5, &6]);
+    /// ```
     fn append(&mut self, node_u: NodeIndex, node_v: NodeIndex) -> Option<NodeIndex> {
         let root_v = self.root(node_v).map_or(self.nil, |r| r.index());
         let root_u = self.root(node_u).map_or(self.nil, |r| r.index());
@@ -610,15 +840,23 @@ where
             return Some(NodeIndex(root_u));
         }
 
-        let mut dir = BstDirection::Right;
-        let mut dest = root_u;
-        let mut src = root_v;
+        let dir = if self.arena[root_u].level < self.arena[root_v].level {
+            BstDirection::Left
+        } else {
+            BstDirection::Right
+        };
 
-        if self.arena[root_u].level < self.arena[root_v].level {
-            dir = BstDirection::Left;
-            dest = root_v;
-            src = root_u;
-        }
+        let dest = if self.arena[root_u].level < self.arena[root_v].level {
+            root_v
+        } else {
+            root_u
+        };
+
+        let src = if self.arena[root_u].level < self.arena[root_v].level {
+            root_u
+        } else {
+            root_v
+        };
 
         let target_level = self.arena[src].level;
         let mut parent = self.nil;
@@ -669,6 +907,8 @@ where
     V: ValueType,
     W: WeightType,
 {
+    /// Returns the index of the root node of the tree containing the tree node indexed by `node`.
+    /// In case of an invalid index, `None` is returned.
     fn root(&self, node: NodeIndex) -> Option<NodeIndex> {
         let node = node.index();
         if !self.is_valid_index(node) {
@@ -686,6 +926,7 @@ where
         Some(NodeIndex(child))
     }
 
+    /// Immutably access the value stored in the tree node indexed by `node`.
     fn value(&self, node: NodeIndex) -> Option<&V> {
         let node = node.index();
         if node <= self.sdummy {
@@ -694,6 +935,7 @@ where
         self.arena.get(node).map(|n| &n.value)
     }
 
+    /// Mutably access the value stored in the tree node indexed by `node`.
     fn value_mut(&mut self, node: NodeIndex) -> Option<&mut V> {
         let node = node.index();
         if node <= self.sdummy {
@@ -702,6 +944,7 @@ where
         self.arena.get_mut(node).map(|n| &mut n.value)
     }
 
+    /// Returns the index of parent node tree node indexed by `node`.
     fn parent(&self, node: NodeIndex) -> Option<NodeIndex> {
         let node = node.index();
         match self.arena.get(node) {
@@ -716,6 +959,26 @@ where
         }
     }
 
+    /// Returns the index of the child node at position `pos` of  the tree node indexed by `node`.
+    ///
+    /// Note that a binary tree node will always have two children, i.e. that even if the
+    /// left child (`pos == 0`) is empty, the right child (`pos == 1`) might contain a value.
+    /// In case of a leaf node, both children will be empty:
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut waaforest = WeightedAaForest::new(10);
+    /// let n1 = waaforest.insert_weighted(1, 1);
+    /// let n2 = waaforest.insert_weighted(2, 1);
+    /// waaforest.append(n1, n2);
+    ///
+    /// // At this point, the AA algorithm has not had to rotate the tree, so that
+    /// // n2 will be the right child of n1:
+    ///
+    /// assert_eq!(waaforest.child(n1, 0), None);
+    /// assert_eq!(waaforest.child(n1, 1), Some(n2));
+    /// ```
     fn child(&self, node: NodeIndex, pos: usize) -> Option<NodeIndex> {
         let node = node.index();
         if let Some(n) = self.arena.get(node) {
@@ -731,16 +994,37 @@ where
         None
     }
 
+    /// Returns the number of child nodes of the tree node indexed by `node`.
+    ///
+    /// Note that a binary tree node will always have two children, i.e. that even if the
+    /// left child is empty, the right child might contain a value.
+    /// In case of a leaf node, both children will be empty, but the number of (empty) children
+    /// will still be 2:
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut waaforest = WeightedAaForest::new(10);
+    /// let n1 = waaforest.insert_weighted(1, 1);
+    /// let n2 = waaforest.insert_weighted(2, 1);
+    /// waaforest.append(n1, n2);
+    ///
+    /// // At this point, the AA algorithm has not had to rotate the tree, so that
+    /// // n2 will be the right child of n1:
+    ///
+    /// assert_eq!(waaforest.child_count(n1), 2);
+    /// assert_eq!(waaforest.child_count(n2), 2);
+    /// assert_eq!(waaforest.child_count(NodeIndex(999)), 0); // Invalid index => no children
+    /// ```
     fn child_count(&self, node: NodeIndex) -> usize {
         let node = node.index();
-        if self.arena.contains(node) {
-            if node > self.sdummy {
-                return 2;
-            }
+        if node > self.sdummy && self.arena.contains(node) {
+            return 2;
         }
         0
     }
 
+    /// Returns the total number of tree nodes of the forest trees in `self`.
     fn node_count(&self) -> usize {
         self.arena.len() - 3
     }
@@ -751,6 +1035,26 @@ where
     V: ValueType,
     W: WeightType,
 {
+    /// Returns the biggest node of the left subtree of the tree node indexed by `node`.
+    ///
+    /// ```
+    /// use outils::prelude::*;                         // The resulting tree is shown below:
+    ///                                                 //
+    /// let mut waaforest = WeightedAaForest::new(10);  //       -- (3) --
+    ///                                                 //      /         \
+    /// let mut indices = Vec::new();                   //    (1)         (5)
+    /// indices.push(waaforest.insert_weighted(0, 1));  //   /   \       /   \
+    ///                                                 // (0)   (2)    (4)   (6)
+    /// for i in 1..7 {
+    ///     indices.push(waaforest.insert_weighted(i, 1));
+    ///     waaforest.append(indices[i-1], indices[i]);
+    /// }
+    ///
+    /// // 2 is biggest key in left subtree of 3.
+    /// assert_eq!(waaforest.sub_predecessor(indices[3]), Some(indices[2]));
+    /// // 4 is a leaf and thus has no subtrees.
+    /// assert_eq!(waaforest.sub_predecessor(indices[4]), None);
+    /// ```
     fn sub_predecessor(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(
             WeightedAaForest::next_from_subtree,
@@ -759,6 +1063,9 @@ where
         ).map(NodeIndex)
     }
 
+    /// Returns the smallest node of the right subtree of the tree node indexed by `node`.
+    ///
+    /// Usage is analogous to [`sub_predecessor`](#method.sub_predecessor)
     fn sub_successor(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(
             WeightedAaForest::next_from_subtree,
@@ -767,26 +1074,99 @@ where
         ).map(NodeIndex)
     }
 
+    /// Returns the biggest node of the whole tree which is smaller than the tree node
+    /// indexed by `node`.
+    ///
+    /// ```
+    /// use outils::prelude::*;                         // The resulting tree is shown below:
+    ///                                                 //
+    /// let mut waaforest = WeightedAaForest::new(10);  //       -- (3) --
+    ///                                                 //      /         \
+    /// let mut indices = Vec::new();                   //    (1)         (5)
+    /// indices.push(waaforest.insert_weighted(0, 1));  //   /   \       /   \
+    ///                                                 // (0)   (2)    (4)   (6)
+    /// for i in 1..7 {
+    ///     indices.push(waaforest.insert_weighted(i, 1));
+    ///     waaforest.append(indices[i-1], indices[i]);
+    /// }
+    ///
+    /// // 3 is the biggest key of the whole tree smaller than 4.
+    /// assert_eq!(waaforest.predecessor(indices[4]), Some(indices[3]));
+    /// // 0 is globally the smallest key of the whole tree and thus has no predecessor.
+    /// assert_eq!(waaforest.predecessor(indices[0]), None);
+    /// ```
     fn predecessor(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(WeightedAaForest::next, node.index(), BstDirection::Left)
             .map(NodeIndex)
     }
 
+    /// Returns the smallest node of the whole tree which is bigger than the tree node
+    /// indexed by `node`.
+    ///
+    /// Usage is analogous to [`predecessor`](#method.predecessor)
     fn successor(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(WeightedAaForest::next, node.index(), BstDirection::Right)
             .map(NodeIndex)
     }
 
+    /// Returns the smallest node of the left subtree of the tree node indexed by `node`.
+    ///
+    /// ```
+    /// use outils::prelude::*;                         // The resulting tree is shown below:
+    ///                                                 //
+    /// let mut waaforest = WeightedAaForest::new(10);  //       -- (3) --
+    ///                                                 //      /         \
+    /// let mut indices = Vec::new();                   //    (1)         (5)
+    /// indices.push(waaforest.insert_weighted(0, 1));  //   /   \       /   \
+    ///                                                 // (0)   (2)    (4)   (6)
+    /// for i in 1..7 {
+    ///     indices.push(waaforest.insert_weighted(i, 1));
+    ///     waaforest.append(indices[i-1], indices[i]);
+    /// }
+    ///
+    /// // 0 is the smallest key of the left subtree of 3
+    /// assert_eq!(waaforest.first(indices[3]), Some(indices[0]));
+    /// // 0 is the smallest key of the left subtree of 1
+    /// assert_eq!(waaforest.first(indices[1]), Some(indices[0]));
+    /// ```
     fn first(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(WeightedAaForest::extreme, node.index(), BstDirection::Left)
             .map(NodeIndex)
     }
 
+    /// Returns the biggest node of the right subtree of the tree node indexed by `node`.
+    ///
+    /// Usage is analogous to [`first`](#method.first)
     fn last(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(WeightedAaForest::extreme, node.index(), BstDirection::Right)
             .map(NodeIndex)
     }
 
+    /// Returns `true` if the tree node indexed by `node_u` is smaller than the tree node
+    /// indexed by `node_v`. Otherwise, and in particular if one of the specified indices
+    /// is invalid, or if the nodes do not belong to the same forest tree, `false` is returned.
+    ///
+    /// **Panics** if the path to the root from either of the tree nodes to be compared contains
+    /// more than 64 nodes. This is because the directions (i.e. left or right) on the path are
+    /// encoded in a bitmap of type `u64`. In practice it is **next to impossible** for this method to
+    /// panic because the number of tree nodes needs to be close to 2^64 for the above condition to occur.
+    ///
+    /// ```
+    /// use outils::prelude::*;                         // The resulting tree is shown below:
+    ///                                                 //
+    /// let mut waaforest = WeightedAaForest::new(10);  //       -- (3) --
+    ///                                                 //      /         \
+    /// let mut indices = Vec::new();                   //    (1)         (5)
+    /// indices.push(waaforest.insert_weighted(0, 1));  //   /   \       /   \
+    ///                                                 // (0)   (2)    (4)   (6)
+    /// for i in 1..7 {
+    ///     indices.push(waaforest.insert(i));
+    ///     waaforest.append(indices[i-1], indices[i]);
+    /// }
+    ///
+    /// assert!(waaforest.is_smaller(indices[0], indices[3]));
+    /// assert!(!waaforest.is_smaller(indices[3], indices[1]));
+    /// ```
     fn is_smaller(&self, node_u: NodeIndex, node_v: NodeIndex) -> bool {
         let node_u = node_u.index();
         let node_v = node_v.index();
@@ -826,9 +1206,25 @@ where
     V: ValueType,
     W: WeightType,
 {
-    fn set_weight(&mut self, node: NodeIndex, weight: W) {
+    /// Set the weight of the tree node indexed by `node` to `weight` and update the subweight
+    /// of this node as well as the subweights of the nodes on the path from this node to the tree
+    /// root. If `node` was a valid index, the old weight is returned.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut waaforest = WeightedAaForest::new(10);
+    /// let n1 = waaforest.insert_weighted(1, 1);
+    /// let w = waaforest.set_weight(n1, 2).expect("Previous weight should not be None");
+    /// assert_eq!(w, 1);
+    /// assert_eq!(waaforest.weight(n1), Some(&2));
+    /// ```
+    fn set_weight(&mut self, node: NodeIndex, weight: W) -> Option<W> {
         let node = node.index();
-        assert!(self.is_valid_index(node));
+        if !self.is_valid_index(node) {
+            return None;
+        }
+        let old_weight = self.arena[node].weight;
         self.arena[node].weight = weight;
         let mut parent = node;
 
@@ -839,8 +1235,10 @@ where
             self.update_weights(parent);
             parent = self.arena[parent].parent;
         }
+        Some(old_weight)
     }
 
+    /// Immutably access the weight of the tree node indexed by `node`.
     fn weight(&self, node: NodeIndex) -> Option<&W> {
         if node.index() > self.sdummy {
             self.arena.get(node.index()).map(|n| &n.weight)
@@ -849,6 +1247,20 @@ where
         }
     }
 
+    /// Immutably access the subweight of the tree node indexed by `node`.
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut waaforest = WeightedAaForest::new(10);
+    /// let n1 = waaforest.insert_weighted(1, 1);
+    /// let n2 = waaforest.insert_weighted(2, 1);
+    /// waaforest.append(n1, n2);
+    ///
+    /// // At this point, the AA algorithm has not had to rotate the tree, so that
+    /// // n2 will be the right child of n1:
+    ///
+    /// assert_eq!(waaforest.subweight(n1), Some(&2));
+    /// ```
     fn subweight(&self, node: NodeIndex) -> Option<&W> {
         if node.index() > self.sdummy {
             self.arena.get(node.index()).map(|n| &n.subweight)
@@ -857,9 +1269,31 @@ where
         }
     }
 
-    fn adjust_weight(&mut self, node: NodeIndex, f: &Fn(&mut W)) {
+    /// Change the weight of the tree node indexed by `node` by applying the closure `f`. After
+    /// applying the closure, the subweight of this node as well as the subweights of the nodes on
+    /// the path from this node to the tree root will be updated accordingly. If `node` was a valid
+    /// index a reference to the changed weight is returned.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut waaforest = WeightedAaForest::new(10);
+    /// let n1 = waaforest.insert_weighted(1, 1);
+    /// let n2 = waaforest.insert_weighted(2, 1);
+    /// waaforest.append(n1, n2);
+    ///
+    /// // At this point, the AA algorithm has not had to rotate the tree, so that
+    /// // n2 will be the right child of n1. Now the weight if n2 will be increased by 1.
+    ///
+    /// waaforest.adjust_weight(n2, &|w: &mut usize| *w += 1);
+    /// assert_eq!(waaforest.weight(n2), Some(&2));
+    /// assert_eq!(waaforest.subweight(n1), Some(&3));
+    /// ```
+    fn adjust_weight(&mut self, node: NodeIndex, f: &Fn(&mut W)) -> Option<&W> {
         let node = node.index();
-        assert!(self.is_valid_index(node));
+        if !self.is_valid_index(node) {
+            return None;
+        }
         f(&mut self.arena[node].weight);
         let mut parent = node;
         loop {
@@ -869,6 +1303,7 @@ where
             self.update_weights(parent);
             parent = self.arena[parent].parent;
         }
+        Some(&self.arena[node].weight)
     }
 }
 
@@ -877,6 +1312,9 @@ impl<'slf, V, W> Values<'slf, V> for WeightedAaForest<V, W>
         V: 'slf + ValueType,
         W: WeightType,
 {
+    /// Returns a boxed iterator over the stored values and their corresponding
+    /// tree node indices held by `self`. The values are not returned in any
+    /// particular order.
     fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
         Box::new(
             self.arena

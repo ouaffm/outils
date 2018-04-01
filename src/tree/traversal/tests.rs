@@ -61,12 +61,6 @@ impl<V> GenericTree<V>
         }
     }
 
-    pub fn set_node_value(&mut self, node: usize, value: V) {
-        if let Some(node) = self.arena.get_mut(node) {
-            node.value = value;
-        }
-    }
-
     pub fn add_child(&mut self, parent: usize, value: V) -> Option<usize> {
         self.arena.get(parent)?;
         let mut child_node = Node::new();

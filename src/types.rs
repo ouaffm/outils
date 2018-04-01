@@ -25,7 +25,8 @@ pub trait ValueType: Default + Debug + Hash {}
 ///
 /// **Note:** In order for the algorithms in this library to work correctly, the implementation of
 /// `Default` must yield the neutral element to the operations of `Add` and `AddAssign`.
-pub trait WeightType: Default + Debug + Copy + Hash + Eq + Ord + Add<Output=Self> + AddAssign {}
+pub trait WeightType
+: Default + Debug + Copy + Hash + Eq + Ord + Add<Output=Self> + AddAssign {}
 
 impl<T> IndexType for T
 where
@@ -81,6 +82,7 @@ impl<Ix> NodeIndex<Ix>
 where
     Ix: IndexType,
 {
+    /// Returns the wrapped index value
     #[inline]
     pub fn index(&self) -> Ix {
         self.0
@@ -104,6 +106,7 @@ impl<Ix> VertexIndex<Ix>
 where
     Ix: IndexType,
 {
+    /// Returns the wrapped index value
     #[inline]
     pub fn index(&self) -> Ix {
         self.0
@@ -119,6 +122,45 @@ where
     }
 }
 
+/// Light-weight, read-only type holding an edge index and the two vertices connected
+/// by the indexed edge, i.e. `e = (v, w)`
+#[derive(Copy, Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
+pub struct Edge<Ix = DefaultIndexType> {
+    index: EdgeIndex<Ix>,
+    src: VertexIndex<Ix>,
+    dst: VertexIndex<Ix>,
+}
+
+impl<Ix> Edge<Ix>
+    where
+        Ix: IndexType,
+{
+    /// Construct a new `Edge` from an edge index value and the two vertex indices connected
+    /// by the new edge, i.e. `e = (src, dst)`.
+    #[inline]
+    pub fn new(index: EdgeIndex<Ix>, src: VertexIndex<Ix>, dst: VertexIndex<Ix>) -> Self {
+        Edge { index, src, dst }
+    }
+
+    /// Returns the wrapped edge index value
+    #[inline]
+    pub fn index(&self) -> EdgeIndex<Ix> {
+        self.index
+    }
+
+    /// Returns the wrapped index of the source vertex
+    #[inline]
+    pub fn src(&self) -> VertexIndex<Ix> {
+        self.src
+    }
+
+    /// Returns the wrapped index of the destination vertex
+    #[inline]
+    pub fn dst(&self) -> VertexIndex<Ix> {
+        self.dst
+    }
+}
+
 /// Newtype to be used as a type-safe edge identifier
 #[derive(Copy, Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct EdgeIndex<Ix = DefaultIndexType>(pub Ix);
@@ -127,6 +169,7 @@ impl<Ix> EdgeIndex<Ix>
 where
     Ix: IndexType,
 {
+    /// /// Returns the wrapped index value
     #[inline]
     pub fn index(&self) -> Ix {
         self.0
@@ -184,9 +227,7 @@ where
 {
     /// Returns a boxed iterator over the indices or the edges held by `self`, along with
     /// their associated vertex indices.
-    fn edges(
-        &'slf self,
-    ) -> Box<Iterator<Item=(EdgeIndex<Ix>, VertexIndex<Ix>, VertexIndex<Ix>)> + 'slf>;
+    fn edges(&'slf self) -> Box<Iterator<Item=Edge<Ix>> + 'slf>;
 }
 
 /// Trees and graphs implementing this trait are able to export a [TGF][1] representation

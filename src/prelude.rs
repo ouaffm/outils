@@ -3,7 +3,10 @@
 //! ```
 //! use outils::prelude::*;
 //! ```
-
+#[doc(no_inline)]
+pub use graph::dynconn::{DynamicComponent, DynamicConnectivity, DynamicWeightedComponent};
+#[doc(no_inline)]
+pub use graph::dynconn::hdt::DynamicGraph;
 #[doc(no_inline)]
 pub use tree::bst::{BalancedBinaryForest, BinarySearchTree, BstDirection, OrderedTree};
 #[doc(no_inline)]
@@ -19,5 +22,5 @@ pub use tree::traversal::Traversable;
 #[doc(no_inline)]
 pub use tree::WeightedTree;
 #[doc(no_inline)]
-pub use types::{EdgeIndex, Edges, EmptyWeight, IndexType, Keys, KeyType, NodeIndex, Values,
-                ValueType, VertexIndex, WeightType};
+pub use types::{Edge, EdgeIndex, Edges, EmptyWeight, IndexType, Keys, KeyType, NodeIndex,
+                Values, ValueType, VertexIndex, WeightType};

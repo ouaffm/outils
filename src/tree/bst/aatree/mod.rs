@@ -1,4 +1,6 @@
+//!
 //! `AaTree<K, V>` is an unweighted balanced binary search tree data structure.
+//!
 use slab;
 use std::cmp::Ordering;
 use std::iter::empty;
@@ -41,8 +43,8 @@ where
 
     fn new_leaf(key: K, value: V) -> Self {
         Node {
-            key: key,
-            value: value,
+            key,
+            value,
             level: 1,
             parent: 0,
             children: [0, 0],
@@ -93,20 +95,53 @@ where
 }
 
 /// `AaTree<K, V>` is a balanced binary search tree data structure. Its tree nodes
-/// are held in a [memory arena][1] nd are addressed through their associated `NodeIndex`.
+/// are held in a [memory arena][1] and are addressed through their associated `NodeIndex`.
 ///
 /// The balancing method for maintaining a tree height of log(n) where n is the number nodes
 /// in the tree is described here: [AA tree][2].
 ///
 /// `AaTree` is parameterized over:
 ///
-/// - Search keys of type 'K', where 'K' must implement the trait ['KeyType'][3]
-/// - Associated values of type 'V', where 'V' must implement the trait ['ValueType']
+/// - Search keys of type 'K', where 'K' must implement the trait [`KeyType`][3]
+/// - Associated values of type 'V', where 'V' must implement the trait [`ValueType`][4]
+///
+/// The usage of `AaTree` resembles that of [`BTreeMap`][5] from the standard library:
+///
+/// ```
+/// use std::collections::BTreeMap;
+/// use outils::prelude::*;
+///
+/// let mut btreemap = BTreeMap::new();
+/// let mut aatree = AaTree::new(10);
+///
+/// btreemap.insert("DE", "Germany");
+/// btreemap.insert("FR", "France");
+/// btreemap.insert("IT", "Italy");
+///
+/// aatree.insert("DE", "Germany");
+/// aatree.insert("FR", "France");
+/// aatree.insert("IT", "Italy");
+///
+/// assert_eq!(btreemap.get(&"DE"), Some(&"Germany"));
+/// assert_eq!(aatree.get(&"DE"), Some(&"Germany"));
+///
+/// assert_eq!(btreemap.remove(&"FR"), Some("France"));
+/// assert_eq!(aatree.remove(&"FR"), Some("France"));
+///
+/// assert_eq!(btreemap.get(&"FR"), None);
+/// assert_eq!(aatree.get(&"FR"), None);
+/// ```
+///
+/// For most use cases, it is recommended to simply use `BTreeMap`, as it is considerably
+/// faster (appr. 50%). However, if information on parent and child relations between tree nodes,
+/// or custom traversal of the tree as such, are needed, `AaTree` has an advantage over `BTreeMap`.
 ///
 /// [1]: https://en.wikipedia.org/wiki/Region-based_memory_management
 /// [2]: https://en.wikipedia.org/wiki/AA_tree
 /// [3]: types/trait.KeyType.html
 /// [4]: .types/trait.ValueType.html
+/// [5]: https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
+///
 #[derive(Clone, Debug)]
 pub struct AaTree<K, V>
 where
@@ -123,6 +158,7 @@ where
     K: KeyType,
     V: ValueType,
 {
+    /// Construct a new empty `AaTree` with an initial capacity of `size`.
     pub fn new(size: usize) -> Self {
         let mut a = slab::Slab::with_capacity(size + 1);
         let n = a.insert(Node::new());
@@ -297,7 +333,7 @@ where
                 BstDirection::Right
             };
             if parent_dir == other_dir {
-                return child;
+                return parent;
             }
             child = parent;
             parent = self.arena[child].parent;
@@ -339,6 +375,21 @@ where
     K: KeyType,
     V: ValueType,
 {
+    /// Inserts a key-value pair into the `AaTree`. If the tree did not have this `key` present, `None`
+    /// is returned. If the tree **did** have this `key` present, the value is updated, and the old
+    /// value is returned. Note that in this situation, the key is left unchanged.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut aatree = AaTree::new(10);
+    ///
+    /// assert_eq!(aatree.insert("KEY-1", "VALUE-1"), None);
+    /// assert_eq!(aatree.insert("KEY-2", "VALUE-2"), None);
+    /// assert_eq!(aatree.insert("KEY-1", "VALUE-3"), Some("VALUE-1"));
+    /// assert_eq!(aatree.get(&"KEY-1"), Some(&"VALUE-3"));
+    /// assert_eq!(aatree.get(&"KEY-2"), Some(&"VALUE-2"));
+    /// ```
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         if self.root == self.nil {
             self.root = self.arena.insert(Node::new_leaf(key, value));
@@ -386,6 +437,16 @@ where
         None
     }
 
+    /// Removes a `key` from the tree if present, in this case returning the associated value.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut aatree = AaTree::new(10);
+    /// aatree.insert("KEY-1", "VALUE-1");
+    /// assert_eq!(aatree.remove(&"KEY-1"), Some("VALUE-1"));
+    /// assert_eq!(aatree.remove(&"KEY-2"), None);
+    /// ```
     fn remove(&mut self, key: &K) -> Option<V> {
         let node;
         match self.find_node(key) {
@@ -487,22 +548,37 @@ where
         }
     }
 
+    /// Returns an immutable reference to the associated value of the specified `key`.
     fn get(&self, key: &K) -> Option<&V> {
         self.find_node(key).map(move |node| &self.arena[node].value)
     }
 
+    /// Returns a mutable reference to the associated value of the specified `key`.
     fn get_mut(&mut self, key: &K) -> Option<&mut V> {
-        self.find_node(key).map(move |node| &mut self.arena[node].value)
+        self.find_node(key)
+            .map(move |node| &mut self.arena[node].value)
     }
 
+    /// Returns the index of the tree node holding the specified `key`.
     fn index(&self, key: &K) -> Option<NodeIndex> {
         self.find_node(key).map(NodeIndex)
     }
 
+    /// Returns `true` if the map contains a value for the specified `key`.
     fn contains_key(&self, key: &K) -> bool {
         self.find_node(key).is_some()
     }
 
+    /// Returns the  key held by the tree node indexed by `node`.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut aatree = AaTree::new(10);
+    /// aatree.insert("KEY-1", "VALUE-1");
+    /// let index = aatree.index(&"KEY-1").expect("KEY-1 should be present");
+    /// assert_eq!(aatree.key(index), Some(&"KEY-1"));
+    /// ```
     fn key(&self, node: NodeIndex) -> Option<&K> {
         let node = node.index();
         if node == self.nil {
@@ -517,6 +593,22 @@ where
     K: KeyType,
     V: ValueType,
 {
+    /// Returns the index of the root node of the `AaTree`. Since the tree can only have one root
+    /// the parameter `node` is not used.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut aatree = AaTree::new(10);
+    /// assert_eq!(aatree.root(NodeIndex(0)), None); // The parameter to root() doesn't matter!
+    /// aatree.insert("KEY-1", "VALUE-1");
+    ///
+    /// // The solitary key in the tree must be the root
+    /// let index = aatree.index(&"KEY-1").expect("KEY-1 should be present");
+    ///
+    /// assert_eq!(aatree.root(index), Some(index));
+    /// assert_eq!(aatree.root(NodeIndex(0)), Some(index)); // The parameter to root() doesn't matter!
+    /// ```
     fn root(&self, _node: NodeIndex) -> Option<NodeIndex> {
         if self.root == self.nil {
             return None;
@@ -524,6 +616,7 @@ where
         Some(NodeIndex(self.root))
     }
 
+    /// Immutably access the value stored in the `AaTree` indexed by `node`.
     fn value(&self, node: NodeIndex) -> Option<&V> {
         let node = node.index();
         if node == self.nil {
@@ -532,6 +625,7 @@ where
         self.arena.get(node).map(|n| &n.value)
     }
 
+    /// Mutably access the value stored in the `AaTree` indexed by `node`.
     fn value_mut(&mut self, node: NodeIndex) -> Option<&mut V> {
         let node = node.index();
         if node == self.nil {
@@ -540,6 +634,7 @@ where
         self.arena.get_mut(node).map(|n| &mut n.value)
     }
 
+    /// Returns the index of parent node tree node indexed by `node`.
     fn parent(&self, node: NodeIndex) -> Option<NodeIndex> {
         let node = node.index();
         match self.arena.get(node) {
@@ -554,6 +649,26 @@ where
         }
     }
 
+    /// Returns the index of the child node at position `pos` of  the tree node indexed by `node`.
+    ///
+    /// Note that a binary search tree node will always have two children, i.e. that even if the
+    /// left child (`pos == 0`) is empty, the right child (`pos == 1`) might contain a value.
+    /// In case of a leaf node, both children will be empty:
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut aatree = AaTree::new(10);
+    /// aatree.insert(1, "1");
+    /// aatree.insert(2, "2");
+    ///
+    /// // At this point, the AA algorithm has not had to rotate the tree, so that
+    /// // the key `2` will be the right child of the key `1`:
+    ///
+    /// let parent = aatree.index(&1).expect("Key '1' should be present");
+    /// assert_eq!(aatree.child(parent, 0), None);
+    /// assert_eq!(aatree.child(parent, 1), aatree.index(&2));
+    /// ```
     fn child(&self, node: NodeIndex, pos: usize) -> Option<NodeIndex> {
         let node = node.index();
         if let Some(n) = self.arena.get(node) {
@@ -569,6 +684,30 @@ where
         None
     }
 
+    /// Returns the number of child nodes of the tree node indexed by `node`.
+    ///
+    /// Note that a binary search tree node will always have two children, i.e. that even if the
+    /// left child is empty, the right child might contain a value.
+    /// In case of a leaf node, both children will be empty, but the number of (empty) children
+    /// will still be 2:
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut aatree = AaTree::new(10);
+    /// aatree.insert(1, "1");
+    /// aatree.insert(2, "2");
+    ///
+    /// // At this point, the AA algorithm has not had to rotate the tree, so that
+    /// // the key `2` will be the right child of the key `1`:
+    ///
+    /// let parent = aatree.index(&1).expect("Key '1' should be present");
+    /// let child = aatree.index(&2).expect("Key '2' should be present");
+    ///
+    /// assert_eq!(aatree.child_count(parent), 2);
+    /// assert_eq!(aatree.child_count(child), 2);
+    /// assert_eq!(aatree.child_count(NodeIndex(999)), 0); // Invalid index => no children
+    /// ```
     fn child_count(&self, node: NodeIndex) -> usize {
         let node = node.index();
         if self.arena.contains(node) && node != self.nil {
@@ -577,6 +716,7 @@ where
         0
     }
 
+    /// Returns the total number of tree nodes of the tree `self`.
     fn node_count(&self) -> usize {
         self.arena.len() - 1
     }
@@ -587,36 +727,128 @@ where
     K: KeyType,
     V: ValueType,
 {
+    /// Returns the biggest node of the left subtree of the tree node indexed by `node`.
+    ///
+    /// ```
+    /// use outils::prelude::*;            // The resulting tree is shown below:
+    ///                                    //
+    /// let mut aatree = AaTree::new(10);  //       -- (3) --
+    ///                                    //      /         \
+    /// for i in 0..7 {                    //    (1)         (5)
+    ///     aatree.insert(i, i);           //   /   \       /   \
+    /// }                                  // (0)   (2)    (4)   (6)
+    ///
+    /// let n2 = aatree.index(&2).expect("Key '2' should be present");
+    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
+    /// let n4 = aatree.index(&4).expect("Key '4' should be present");
+    ///
+    /// assert_eq!(aatree.sub_predecessor(n3), Some(n2)); // 2 is biggest key in left subtree of 3.
+    /// assert_eq!(aatree.sub_predecessor(n4), None);     // 4 is a leaf and thus has no subtrees.'
+    /// ```
     fn sub_predecessor(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(AaTree::next_from_subtree, node.index(), BstDirection::Left)
             .map(NodeIndex)
     }
 
+    /// Returns the smallest node of the right subtree of the tree node indexed by `node`.
+    ///
+    /// Usage is analogous to [`sub_predecessor`](#method.sub_predecessor)
     fn sub_successor(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(AaTree::next_from_subtree, node.index(), BstDirection::Right)
             .map(NodeIndex)
     }
 
+    /// Returns the biggest node of the whole tree which is smaller than the tree node
+    /// indexed by `node`.
+    ///
+    /// ```
+    /// use outils::prelude::*;            // The resulting tree is shown below:
+    ///                                    //
+    /// let mut aatree = AaTree::new(10);  //       -- (3) --
+    ///                                    //      /         \
+    /// for i in 0..7 {                    //    (1)         (5)
+    ///     aatree.insert(i, i);           //   /   \       /   \
+    /// }                                  // (0)   (2)    (4)   (6)
+    ///
+    /// let n0 = aatree.index(&0).expect("Key '0' should be present");
+    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
+    /// let n4 = aatree.index(&4).expect("Key '4' should be present");
+    ///
+    /// assert_eq!(aatree.predecessor(n4), Some(n3)); // 3 is the biggest key of the whole tree
+    ///                                               // smaller than 4.
+    /// assert_eq!(aatree.predecessor(n0), None);     // 0 is globally the smallest key of the
+    ///                                               // whole tree and thus has no predecessor.
+    /// ```
     fn predecessor(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(AaTree::next, node.index(), BstDirection::Left)
             .map(NodeIndex)
     }
 
+    /// Returns the smallest node of the whole tree which is bigger than the tree node
+    /// indexed by `node`.
+    ///
+    /// Usage is analogous to [`predecessor`](#method.predecessor)
     fn successor(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(AaTree::next, node.index(), BstDirection::Right)
             .map(NodeIndex)
     }
 
+    /// Returns the smallest node of the left subtree of the tree node indexed by `node`.
+    ///
+    /// ```
+    /// use outils::prelude::*;            // The resulting tree is shown below:
+    ///                                    //
+    /// let mut aatree = AaTree::new(10);  //       -- (3) --
+    ///                                    //      /         \
+    /// for i in 0..7 {                    //    (1)         (5)
+    ///     aatree.insert(i, i);           //   /   \       /   \
+    /// }                                  // (0)   (2)    (4)   (6)
+    ///
+    /// let n0 = aatree.index(&0).expect("Key '0' should be present");
+    /// let n1 = aatree.index(&1).expect("Key '1' should be present");
+    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
+    ///
+    /// assert_eq!(aatree.first(n3), Some(n0));  // 0 is the smallest key of the left subtree of 3
+    /// assert_eq!(aatree.first(n1), Some(n0));  // 0 is the smallest key of the left subtree of 1
+    /// ```
     fn first(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(AaTree::extreme, node.index(), BstDirection::Left)
             .map(NodeIndex)
     }
 
+    /// Returns the biggest node of the right subtree of the tree node indexed by `node`.
+    ///
+    /// Usage is analogous to [`first`](#method.first)
     fn last(&self, node: NodeIndex) -> Option<NodeIndex> {
         self.apply(AaTree::extreme, node.index(), BstDirection::Right)
             .map(NodeIndex)
     }
 
+    /// Returns `true` if the tree node indexed by `node_u` is smaller than the tree node
+    /// indexed by `node_v`. Otherwise, and in particular if one of the specified indices
+    /// is invalid, `false` is returned.
+    ///
+    /// **Panics** if the path to the root from either of the tree nodes to be compared contains
+    /// more than 64 nodes. This is because the directions (i.e. left or right) on the path are
+    /// encoded in a bitmap of type `u64`. In practice it is **next to impossible** for this method to
+    /// panic because the number of tree nodes needs to be close to 2^64 for the above condition to occur.
+    ///
+    /// ```
+    /// use outils::prelude::*;            // The resulting tree is shown below:
+    ///                                    //
+    /// let mut aatree = AaTree::new(10);  //       -- (3) --
+    ///                                    //      /         \
+    /// for i in 0..7 {                    //    (1)         (5)
+    ///     aatree.insert(i, i);           //   /   \       /   \
+    /// }                                  // (0)   (2)    (4)   (6)
+    ///
+    /// let n0 = aatree.index(&0).expect("Key '0' should be present");
+    /// let n1 = aatree.index(&1).expect("Key '1' should be present");
+    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
+    ///
+    /// assert!(aatree.is_smaller(n0, n3));
+    /// assert!(!aatree.is_smaller(n3, n1));
+    /// ```
     fn is_smaller(&self, node_u: NodeIndex, node_v: NodeIndex) -> bool {
         let node_u = node_u.index();
         let node_v = node_v.index();
@@ -634,6 +866,9 @@ where
     K: 'slf + KeyType,
     V: ValueType,
 {
+    /// Returns a boxed iterator over the search keys and their corresponding
+    /// tree node indices held by `self`. The keys are returned in the order
+    /// of the search keys.
     fn keys(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf K)> + 'slf> {
         if self.root == self.nil {
             return Box::new(empty::<(NodeIndex, &'slf K)>());
@@ -650,6 +885,9 @@ where
     K: KeyType,
     V: 'slf + ValueType,
 {
+    /// Returns a boxed iterator over the stored values and their corresponding
+    /// tree node indices held by `self`. The keys are returned in the order
+    /// of the corresponding search keys.
     fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
         if self.root == self.nil {
             return Box::new(empty::<(NodeIndex, &'slf V)>());
