@@ -4,6 +4,11 @@ version = "0.1.0"
 license = "MIT/Apache-2.0"
 authors = ["ouaffm"]
 
+include = [
+    "**/*.rs",
+    "Cargo.toml",
+]
+
 description = "Graph and tree data structure library. Providing utilities which aren't easily available in Rust."
 documentation = "https://docs.rs/outils/"
 repository = "https://github.com/ouaffm/outils"
