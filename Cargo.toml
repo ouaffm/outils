@@ -1,6 +1,6 @@
 [package]
 name = "outils"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT/Apache-2.0"
 authors = ["ouaffm"]
 
@@ -19,6 +19,9 @@ readme = "./README.md"
 [lib]
 name = "outils"
 bench = false
+
+[badges]
+travis-ci = { repository = "ouaffm/outils" }
 
 [[bench]]
 name = "outils_benchmarks"

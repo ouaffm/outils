@@ -3,6 +3,11 @@
 **outils** is a graph and tree data structure library. It provides utilities which at the
 time of writing were not available through other crates.
 
+Please read the [API Documentation here](https://docs.rs/outils/).
+
+[![](https://travis-ci.org/ouaffm/outils.svg?branch=master)](https://travis-ci.org/ouaffm/outils)
+[![](http://meritbadge.herokuapp.com/outils)](https://crates.io/crates/outils)
+
 ## Utilities
 
 ### Fully dynamic connectivity for general graphs: 
@@ -12,7 +17,7 @@ In this context, _fully dynamic_ means that the graph can be updated by insertio
 deletions of edges between queries (see also [Dynamic Connectivity][1]).
 
 - [`DynamicGraph`][2]: Deterministic dynamic connectivity with query cost **O(log(n))** and update
-costs of **O(log^2 (n))**. The structure also supports vertex weights, dynamically maintaining the
+costs of **O(log^2 (n))**. The structure also supports edge and vertex weights, dynamically maintaining the
 total weight of connected components.
 
 ### Balanced binary search trees:
@@ -48,6 +53,9 @@ iteratively, as in the corresponding AA tree structures above.
 payload, a node weight can be stored and tree subweights are maintained.
 
 ## Recent changes
+- 0.1.1
+  - Support edge weights in `DynamicGraph`
+  - Travis-CI support
 - 0.1.0
   - Initial version 
 
