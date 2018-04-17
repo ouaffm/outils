@@ -17,7 +17,7 @@ In this context, _fully dynamic_ means that the graph can be updated by insertio
 deletions of edges between queries (see also [Dynamic Connectivity][1]).
 
 - [`DynamicGraph`][2]: Deterministic dynamic connectivity with query cost **O(log(n))** and update
-costs of **O(log^2 (n))**. The structure also supports edge and vertex weights, dynamically maintaining the
+costs of **O(log^2 (n))**. The structure also supports vertex weights, dynamically maintaining the
 total weight of connected components.
 
 ### Balanced binary search trees:
@@ -54,8 +54,8 @@ payload, a node weight can be stored and tree subweights are maintained.
 
 ## Recent changes
 - 0.1.1
-  - Support edge weights in `DynamicGraph`
   - Travis-CI support
+  - Fixed minor typos in documentation
 - 0.1.0
   - Initial version 
 

@@ -86,7 +86,7 @@ where
 /// are held in a [memory arena][1] and are addressed through their associated `NodeIndex`.
 ///
 /// /// `AaForest` is parameterized over:
-/// - Associated values of type 'V', where 'V' must implement the trait [`ValueType`][2]
+/// - Associated values of type `V`, where `V` must implement the trait [`ValueType`][2]
 ///
 /// The balancing method for maintaining a tree height of log(n) where n is the number nodes
 /// in the tree is described here: [AA tree][3].

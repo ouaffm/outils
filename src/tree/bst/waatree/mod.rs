@@ -999,6 +999,7 @@ where
     }
 
     /// Immutably access the subweight of the tree node indexed by `node`.
+    ///
     /// ```
     /// use outils::prelude::*;
     ///
@@ -1012,7 +1013,7 @@ where
     /// // At this point, the AA algorithm has not had to rotate the tree, so that
     /// // n2 will be the right child of n1:
     ///
-    /// assert_eq!(waaforest.subweight(n1), Some(&2));
+    /// assert_eq!(waatree.subweight(n1), Some(&2));
     /// ```
     fn subweight(&self, node: NodeIndex) -> Option<&W> {
         if node.index() > self.nil {

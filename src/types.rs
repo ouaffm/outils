@@ -52,7 +52,7 @@ where
 {
 }
 
-/// Unit-like (i.e. zero-sized) struct that can be used as a `WeightType`.
+/// Unit-like (i.e. zero-sized) struct that can be used as an `WeightType`.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct EmptyWeight;
 

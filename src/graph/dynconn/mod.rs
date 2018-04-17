@@ -18,12 +18,12 @@ pub trait DynamicConnectivity<W = EmptyWeight, Ix = DefaultIndexType>
 where
     Ix: IndexType,
 {
-    /// Connects the vertices indexed by `v` and `w` and returns the created edge.
+    /// Connects the vertices indexed by `v` and `w` and returns index of the created edge.
     /// If the vertices cannot be connected - the reasons for this dependant on the implementation
     /// of this trait - `None` is returned.
     fn insert_edge(&mut self, v: VertexIndex<Ix>, w: VertexIndex<Ix>) -> Option<Edge<Ix>>;
 
-    /// Deletes the edge `e` from the graph if it exists.
+    /// Deletes the edge  `e` from the graph if it exists.
     fn delete_edge(&mut self, e: Edge<Ix>);
 
     /// Returns `true` if the two vertices indexed by `v` and `w` are connected in `self` through

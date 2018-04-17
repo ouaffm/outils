@@ -575,7 +575,7 @@ where
 /// `DynamicGraph<W>` is general graph data structure providing deterministic fully-dynamic
 /// connectivity for a graph with a fixed set of vertices.
 ///
-/// That is, operations are provided answer queries as to whether two vertices are
+/// That is, operations are provided to answer queries as to whether two vertices are
 /// connected in a graph through a path of edges. In this context, _fully dynamic_ means that the
 /// graph can be updated by insertions or deletions of edges through the provided operations
 /// between queries (see also [Dynamic Connectivity][1]).
@@ -592,7 +592,7 @@ where
 ///
 /// The space requirement of the data structure is O(log(n) * n).
 ///
-/// This is achieved maintaining the [spanning forest][2] of the graph under insertions and
+/// This is achieved by maintaining the [spanning forest][2] of the graph under insertions and
 /// deletions of edges. The complexity in maintaining a spanning forest lies in the fact that the
 /// deletion of an edge might split a tree in the spanning forest into two trees but not disconnect
 /// the connected component. In this situation, the algorithm must try to reconnect the trees by
@@ -664,7 +664,7 @@ where
     W: WeightType,
 {
     /// Construct a `DynamicGraph` with a fixed number of vertices, i.e. `size` and with an expected
-    /// degree (i.e. number of adjacent edges) of `adjacency_hint.
+    /// degree (i.e. number of adjacent edges) of `adjacency_hint`.
     ///
     /// For a given value of `size`, the `DynamicGraph` will accept the vertex indices from
     /// `VertexIndex(0)` to `VertexIndex(size-1)`. Values outside this range will be ignored by

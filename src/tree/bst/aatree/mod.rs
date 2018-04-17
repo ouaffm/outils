@@ -102,8 +102,8 @@ where
 ///
 /// `AaTree` is parameterized over:
 ///
-/// - Search keys of type 'K', where 'K' must implement the trait [`KeyType`][3]
-/// - Associated values of type 'V', where 'V' must implement the trait [`ValueType`][4]
+/// - Search keys of type `K`, where `K` must implement the trait [`KeyType`][3]
+/// - Associated values of type `V`, where `V` must implement the trait [`ValueType`][4]
 ///
 /// The usage of `AaTree` resembles that of [`BTreeMap`][5] from the standard library:
 ///

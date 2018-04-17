@@ -99,7 +99,7 @@ where
 /// are held in a [memory arena][1] and are addressed through their associated `NodeIndex`.
 ///
 /// /// `AaForest` is parameterized over:
-/// - Associated values of type 'V', where 'V' must implement the trait [`ValueType`][2]
+/// - Associated values of type `V`, where `V` must implement the trait [`ValueType`][2]
 /// - Associated node weights and subweights of type `W`, where `W` must implement
 ///   the trait [`WeightType`][3].
 ///
@@ -1248,6 +1248,7 @@ where
     }
 
     /// Immutably access the subweight of the tree node indexed by `node`.
+    ///
     /// ```
     /// use outils::prelude::*;
     ///
