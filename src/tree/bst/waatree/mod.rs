@@ -175,8 +175,8 @@ where
 /// [1]: https://en.wikipedia.org/wiki/Region-based_memory_management
 /// [2]: https://en.wikipedia.org/wiki/AA_tree
 /// [3]: types/trait.KeyType.html
-/// [4]: .types/trait.ValueType.html
-/// [5]: .types/trait.WeightType.html
+/// [4]: ../../../types/trait.ValueType.html
+/// [5]: ../../../types/trait.WeightType.html
 /// [6]: https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
 ///
 #[derive(Clone, Debug)]
@@ -833,7 +833,8 @@ where
             WeightedAaTree::next_from_subtree,
             node.index(),
             BstDirection::Left,
-        ).map(NodeIndex)
+        )
+            .map(NodeIndex)
     }
 
     /// Returns the smallest node of the right subtree of the tree node indexed by `node`.
@@ -844,7 +845,8 @@ where
             WeightedAaTree::next_from_subtree,
             node.index(),
             BstDirection::Right,
-        ).map(NodeIndex)
+        )
+            .map(NodeIndex)
     }
 
     /// Returns the biggest node of the whole tree which is smaller than the tree node
@@ -941,7 +943,9 @@ where
     fn is_smaller(&self, node_u: NodeIndex, node_v: NodeIndex) -> bool {
         let node_u = node_u.index();
         let node_v = node_v.index();
-        if node_u == self.nil || !self.arena.contains(node_u) || node_v == self.nil
+        if node_u == self.nil
+            || !self.arena.contains(node_u)
+            || node_v == self.nil
             || !self.arena.contains(node_v)
             {
             return false;

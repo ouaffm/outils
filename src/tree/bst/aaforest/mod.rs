@@ -85,7 +85,7 @@ where
 /// `AaForest<V>` is a data structure for holding balanced binary trees. Its tree nodes
 /// are held in a [memory arena][1] and are addressed through their associated `NodeIndex`.
 ///
-/// /// `AaForest` is parameterized over:
+/// `AaForest` is parameterized over:
 /// - Associated values of type `V`, where `V` must implement the trait [`ValueType`][2]
 ///
 /// The balancing method for maintaining a tree height of log(n) where n is the number nodes
@@ -115,7 +115,7 @@ where
 /// assert_eq!(seq, vec![&1, &2, &3]);
 /// ```
 /// [1]: https://en.wikipedia.org/wiki/Region-based_memory_management
-/// [2]: .types/trait.ValueType.html
+/// [2]: ../../../types/trait.ValueType.html
 /// [3]: https://en.wikipedia.org/wiki/AA_tree
 /// [4]: https://doc.rust-lang.org/std/cmp/trait.Ord.html
 ///
@@ -465,9 +465,11 @@ where
 
     fn join_at(&mut self, at: usize, left: usize, right: usize) -> usize {
         self.arena[at].level = 1;
-        let mut parent = self.append(NodeIndex(left), NodeIndex(at))
+        let mut parent = self
+            .append(NodeIndex(left), NodeIndex(at))
             .map_or(self.nil, |p| p.index());
-        parent = self.append(NodeIndex(parent), NodeIndex(right))
+        parent = self
+            .append(NodeIndex(parent), NodeIndex(right))
             .map_or(self.nil, |p| p.index());
         parent
     }
@@ -661,7 +663,8 @@ where
             AaForest::next_from_subtree,
             node.index(),
             BstDirection::Left,
-        ).map(NodeIndex)
+        )
+            .map(NodeIndex)
     }
 
     /// Returns the smallest node of the right subtree of the tree node indexed by `node`.
@@ -672,7 +675,8 @@ where
             AaForest::next_from_subtree,
             node.index(),
             BstDirection::Right,
-        ).map(NodeIndex)
+        )
+            .map(NodeIndex)
     }
 
     /// Returns the biggest node of the whole tree which is smaller than the tree node

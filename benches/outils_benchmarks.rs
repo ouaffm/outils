@@ -38,8 +38,16 @@ lazy_static! {
         let mut list = Vec::with_capacity(*BITBOARD_WEIGHT_LENGTH);
         let mut rng = rand::thread_rng();
         for _ in 0..*BITBOARD_WEIGHT_LENGTH {
-            list.push(BitboardWeight { blocks: [rng.gen::<u64>(), rng.gen::<u64>(),
-            rng.gen::<u64>(), rng.gen::<u64>(), rng.gen::<u64>(), rng.gen::<u64>()] });
+            list.push(BitboardWeight {
+                blocks: [
+                    rng.gen::<u64>(),
+                    rng.gen::<u64>(),
+                    rng.gen::<u64>(),
+                    rng.gen::<u64>(),
+                    rng.gen::<u64>(),
+                    rng.gen::<u64>(),
+                ],
+            });
         }
         list
     };

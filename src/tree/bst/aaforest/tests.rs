@@ -1,8 +1,8 @@
+// use super::AaForest;
 use prelude::*;
 use rand;
 use rand::Rng;
 use std::cmp::Ordering;
-use super::AaForest;
 use types::Tgf;
 
 #[test]

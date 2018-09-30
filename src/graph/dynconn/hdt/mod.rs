@@ -6,8 +6,8 @@ use graph::dynconn::{DynamicComponent, DynamicConnectivity, DynamicWeightedCompo
 use slab::Slab;
 use std::marker::PhantomData;
 use std::mem::{size_of, swap};
-use std::ops::{Index, IndexMut};
 use std::ops::{Add, AddAssign};
+use std::ops::{Index, IndexMut};
 use tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
 use tree::bst::waaforest::WeightedAaForest;
 use tree::traversal::Traversable;
@@ -294,7 +294,8 @@ where
     }
 
     fn pass_activity(&mut self, v: NodeIndex, w: NodeIndex) {
-        let weight_v = self.forest
+        let weight_v = self
+            .forest
             .weight(v)
             .map_or(VertexWeight::default(), |wv| *wv);
         if weight_v.act_count == 0 {
@@ -340,10 +341,12 @@ where
 
     fn tree_roots_ordered(&self, src: VertexIndex, dst: VertexIndex) -> (NodeIndex, NodeIndex) {
         let (left, right) = self.tree_roots(src, dst);
-        let left_tree_weight = self.forest
+        let left_tree_weight = self
+            .forest
             .subweight(left)
             .map_or(VertexWeight::default(), |w| *w);
-        let right_tree_weight = self.forest
+        let right_tree_weight = self
+            .forest
             .subweight(right)
             .map_or(VertexWeight::default(), |w| *w);
         if right_tree_weight.act_count < left_tree_weight.act_count {
@@ -355,21 +358,25 @@ where
     fn tree_roots(&self, src: VertexIndex, dst: VertexIndex) -> (NodeIndex, NodeIndex) {
         let src_occ = self.vertices[src].active_node;
         let dst_occ = self.vertices[dst].active_node;
-        let src_tree = self.forest
+        let src_tree = self
+            .forest
             .root(src_occ)
             .expect("trees(): root(src_occ) should never return None");
-        let dst_tree = self.forest
+        let dst_tree = self
+            .forest
             .root(dst_occ)
             .expect("trees(): root(dst_occ) should never return None");
         (src_tree, dst_tree)
     }
 
     fn make_first(&mut self, v1: NodeIndex) {
-        let root = self.forest
+        let root = self
+            .forest
             .root(v1)
             .expect("make_first(): root() should never return None");
 
-        let w1 = self.forest
+        let w1 = self
+            .forest
             .first(root)
             .expect("make_first(): first() should never return None");
 
@@ -384,7 +391,8 @@ where
         let hw_out_idx = self.forest[w1][EdgeDirection::Outgoing]
             .expect("make_first(): outgoing half edge of current first should never be None");
 
-        let w2 = self.forest
+        let w2 = self
+            .forest
             .last(root)
             .expect("make_first(): last() should never return None");
         let value_v1 = self.forest[v1];
@@ -404,7 +412,8 @@ where
 
         match self.forest.split(v1, BstDirection::Right) {
             (Some(mut prefix), Some(postfix)) => {
-                prefix = self.forest
+                prefix = self
+                    .forest
                     .append(prefix, v2)
                     .expect("make_first(): append() should never return None");
                 self.forest
@@ -436,10 +445,12 @@ where
         let v2 = self.create_vertex(EulerVertex::new(v));
 
         self.make_first(w1);
-        let w_root = self.forest
+        let w_root = self
+            .forest
             .root(w1)
             .expect("link(): root() should never return None");
-        let w2 = self.forest
+        let w2 = self
+            .forest
             .last(w_root)
             .expect("link(): last() should never return None");
 
@@ -453,13 +464,15 @@ where
 
         let hv_out_idx = self.forest[v1][EdgeDirection::Outgoing];
 
-        let infix = self.forest
+        let infix = self
+            .forest
             .append(w1, v2)
             .expect("link(): append() should never return None");
 
         match self.forest.split(v1, BstDirection::Left) {
             (Some(mut prefix), Some(postfix)) => {
-                prefix = self.forest
+                prefix = self
+                    .forest
                     .append(prefix, infix)
                     .expect("link(): append() should never return None");
                 self.forest
@@ -487,17 +500,21 @@ where
         self.forest[w1][EdgeDirection::Incoming] = Some(hw);
         self.forest[w2][EdgeDirection::Outgoing] = Some(hw);
 
-        hv_out_idx.map(|i| self.vertices[v].tree_edges[i][EdgeDirection::Outgoing] = v2);
+        if let Some(i) = hv_out_idx {
+            self.vertices[v].tree_edges[i][EdgeDirection::Outgoing] = v2
+        }
     }
 
     fn cut_context(&self, e: EdgeIndex, edges: &DynamicEdgeList) -> EulerCutContext {
         let s = edges[e].src;
-        let hs_idx = self.find_half_edge(s, e)
+        let hs_idx = self
+            .find_half_edge(s, e)
             .expect("cut_context(): find_half_edge() should never return None");
         let mut s1 = self.vertices[s].tree_edges[hs_idx][EdgeDirection::Outgoing];
         let mut s2 = self.vertices[s].tree_edges[hs_idx][EdgeDirection::Incoming];
         let d = edges[e].dst;
-        let hd_idx = self.find_half_edge(d, e)
+        let hd_idx = self
+            .find_half_edge(d, e)
             .expect("cut_context(): find_half_edge() should never return None");
         let mut d1 = self.vertices[d].tree_edges[hd_idx][EdgeDirection::Outgoing];
         let mut d2 = self.vertices[d].tree_edges[hd_idx][EdgeDirection::Incoming];
@@ -538,11 +555,13 @@ where
         let ctx = self.cut_context(e1, edges);
         let hv_e2_idx = self.forest[ctx.v2][EdgeDirection::Outgoing];
 
-        let prefix = self.forest
+        let prefix = self
+            .forest
             .split(ctx.v1, BstDirection::Left)
             .0
             .expect("cut(): split() should never return None");
-        let postfix = self.forest
+        let postfix = self
+            .forest
             .split(ctx.v2, BstDirection::Right)
             .1
             .expect("cut(): split() should never return None");
@@ -555,7 +574,10 @@ where
         self.forest[ctx.w2][EdgeDirection::Outgoing] = None;
 
         self.forest[ctx.v1][EdgeDirection::Outgoing] = hv_e2_idx;
-        hv_e2_idx.map(|i| self.vertices[ctx.v].tree_edges[i][EdgeDirection::Outgoing] = ctx.v1);
+
+        if let Some(i) = hv_e2_idx {
+            self.vertices[ctx.v].tree_edges[i][EdgeDirection::Outgoing] = ctx.v1;
+        }
 
         self.vertices[ctx.v].tree_edges.remove(ctx.hv_idx);
         self.vertices[ctx.w].tree_edges.remove(ctx.hw_idx);
@@ -777,11 +799,7 @@ where
             while let Some((v1, v1_idx)) = state.next(&self.euler[level]) {
                 let e_nt_idx = self.euler[level].vertices[v1].adj_edges[v1_idx];
                 let e_nt = self.edges[e_nt_idx];
-                let v2 = if v1 == e_nt.src {
-                    e_nt.dst
-                } else {
-                    e_nt.src
-                };
+                let v2 = if v1 == e_nt.src { e_nt.dst } else { e_nt.src };
                 let v2_idx = self.euler[level]
                     .adjacent_edge_index(v2, e_nt_idx)
                     .expect("replace(): adjacent_edge_index() should never be None");
@@ -857,7 +875,8 @@ where
     /// ignore any `Edge` passed to it that is not equal to an instance stored internally.
     fn delete_edge(&mut self, e: Edge) {
         let idx = e.index();
-        if !self.edges.edges.contains(idx.index()) || self.edges[idx].src != e.src()
+        if !self.edges.edges.contains(idx.index())
+            || self.edges[idx].src != e.src()
             || self.edges[idx].dst != e.dst()
             {
                 return;
@@ -866,8 +885,9 @@ where
             if size_of::<W>() > 0 {
                 self.delete_tree_edge(idx);
                 self.ext_euler.cut(idx, &self.edges);
-                self.replace(idx)
-                    .map(|edge| self.ext_euler.link(edge, &self.edges));
+                if let Some(edge) = self.replace(idx) {
+                    self.ext_euler.link(edge, &self.edges);
+                }
             } else {
                 self.delete_tree_edge(idx);
                 self.replace(idx);
@@ -1183,7 +1203,8 @@ where
     fn adjust_vertex_weight(&mut self, v: VertexIndex, f: &Fn(&mut W)) -> Option<&W> {
         if size_of::<W>() > 0 && v.index() < self.size {
             let n = self.ext_euler.vertices[v].active_node;
-            return self.ext_euler
+            return self
+                .ext_euler
                 .forest
                 .adjust_weight(n, &|w: &mut VertexWeight<W>| f(&mut w.weight))
                 .map(|w| &w.weight);
@@ -1241,16 +1262,16 @@ where
         let f = &euler.forest;
         loop {
             if let Some(n) = self.stack.pop() {
-                f.child(n, 1).map(|c| {
+                if let Some(c) = f.child(n, 1) {
                     if f.subweight(c).map_or(0, |w| w.act_count) > 0 {
                         self.stack.push(c)
                     }
-                });
-                f.child(n, 0).map(|c| {
+                }
+                if let Some(c) = f.child(n, 0) {
                     if f.subweight(c).map_or(0, |w| w.act_count) > 0 {
                         self.stack.push(c)
                     }
-                });
+                }
                 if f.weight(n).map_or(0, |w| w.act_count) == 1 {
                     return Some(f[n].vertex);
                 }
@@ -1328,8 +1349,12 @@ where
         let f = &euler.forest;
         loop {
             if let Some(n) = self.stack.pop() {
-                f.child(n, 1).map(|c| self.stack.push(c));
-                f.child(n, 0).map(|c| self.stack.push(c));
+                if let Some(c) = f.child(n, 1) {
+                    self.stack.push(c)
+                }
+                if let Some(c) = f.child(n, 0) {
+                    self.stack.push(c)
+                }
                 if let Some(h_out) = f[n][EdgeDirection::Outgoing] {
                     let v = f[n].vertex;
                     let e = euler.vertices[v].tree_edges[h_out].edge;
@@ -1382,16 +1407,16 @@ where
         loop {
             if self.idx == 0 {
                 if let Some(n) = self.stack.pop() {
-                    f.child(n, 1).map(|c| {
+                    if let Some(c) = f.child(n, 1) {
                         if f.subweight(c).map_or(0, |w| w.adj_count) > 0 {
                             self.stack.push(c)
                         }
-                    });
-                    f.child(n, 0).map(|c| {
+                    }
+                    if let Some(c) = f.child(n, 0) {
                         if f.subweight(c).map_or(0, |w| w.adj_count) > 0 {
                             self.stack.push(c)
                         }
-                    });
+                    }
                     if f.weight(n).map_or(0, |w| w.act_count) == 1 {
                         let v = f[n].vertex;
                         self.vertex = Some(v);
@@ -1402,7 +1427,8 @@ where
                 }
             } else {
                 self.idx -= 1;
-                let v = self.vertex
+                let v = self
+                    .vertex
                     .expect("AdjecentEdgeIteratorState::next(): self.vertex should not be None");
                 return Some((v, self.idx));
             }

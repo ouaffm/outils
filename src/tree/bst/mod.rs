@@ -1,10 +1,10 @@
 //! Binary tree data structures and algorithms
 use types::{DefaultIndexType, IndexType, KeyType, NodeIndex, ValueType};
 
-pub mod aatree;
-pub mod waatree;
 pub mod aaforest;
+pub mod aatree;
 pub mod waaforest;
+pub mod waatree;
 
 /// Enum to refer to the two possible traversal directions of a binary tree
 /// (i.e. `Left` and `Right`) in a type-safe way.
@@ -19,8 +19,8 @@ pub enum BstDirection {
 impl BstDirection {
     /// Returns the opposite direction
     #[inline]
-    fn other(&self) -> BstDirection {
-        match *self {
+    fn other(self) -> BstDirection {
+        match self {
             BstDirection::Left => BstDirection::Right,
             BstDirection::Right => BstDirection::Left,
         }

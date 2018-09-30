@@ -139,7 +139,7 @@ where
 /// [1]: https://en.wikipedia.org/wiki/Region-based_memory_management
 /// [2]: https://en.wikipedia.org/wiki/AA_tree
 /// [3]: types/trait.KeyType.html
-/// [4]: .types/trait.ValueType.html
+/// [4]: ../../../types/trait.ValueType.html
 /// [5]: https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
 ///
 #[derive(Clone, Debug)]
@@ -852,7 +852,9 @@ where
     fn is_smaller(&self, node_u: NodeIndex, node_v: NodeIndex) -> bool {
         let node_u = node_u.index();
         let node_v = node_v.index();
-        if node_u == self.nil || !self.arena.contains(node_u) || node_v == self.nil
+        if node_u == self.nil
+            || !self.arena.contains(node_u)
+            || node_v == self.nil
             || !self.arena.contains(node_v)
             {
             return false;

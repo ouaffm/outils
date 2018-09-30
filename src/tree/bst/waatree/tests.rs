@@ -1,8 +1,8 @@
+// use super::WeightedAaTree;
 use prelude::*;
 use rand;
 use rand::Rng;
 use std::cmp::Ordering;
-use super::WeightedAaTree;
 use types::Tgf;
 
 #[test]
@@ -231,10 +231,12 @@ fn is_binary_search_tree(
         return true;
     }
 
-    let min_ok = tree.compare(&min, node)
+    let min_ok = tree
+        .compare(&min, node)
         .map(|x| x != Ordering::Greater)
         .unwrap_or(false);
-    let max_ok = tree.compare(&max, node)
+    let max_ok = tree
+        .compare(&max, node)
         .map(|x| x != Ordering::Less)
         .unwrap_or(false);
 

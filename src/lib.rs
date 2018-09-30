@@ -42,6 +42,12 @@
 //!  - [`WeightedAaForest`][10]: This is similar to `AaForest`. However, in addition to the actual
 //! payload, a node weight can be stored and tree subweights are maintained.
 //!
+//! **General purpose tree data structures**:
+//!
+//! - [`Forest`][11]: A generic forest of trees. The implementation is based on
+//! [arena allocation][6] and a [first child/next sibling][12] representation, thus storing the
+//! children of a node as a linked list headed by the first child of the parent node.
+//!
 //! [1]: https://en.wikipedia.org/wiki/Dynamic_connectivity
 //! [2]: ./graph/dynconn/hdt/struct.DynamicGraph.html
 //! [3]: https://en.wikipedia.org/wiki/Self-balancing_binary_search_tree
@@ -52,6 +58,8 @@
 //! [8]: ./tree/bst/waatree/struct.WeightedAaTree.html
 //! [9]: ./tree/bst/aaforest/struct.AaForest.html
 //! [10]: ./tree/bst/waaforest/struct.WeightedAaForest.html
+//! [11]: ./tree/generic/struct.Forest.html
+//! [12]: https://en.wikipedia.org/wiki/Left-child_right-sibling_binary_tree
 
 #![warn(missing_docs)]
 
@@ -59,7 +67,7 @@ extern crate core;
 extern crate rand;
 extern crate slab;
 
-pub mod tree;
 pub mod graph;
-pub mod types;
 pub mod prelude;
+pub mod tree;
+pub mod types;

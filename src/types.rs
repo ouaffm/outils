@@ -25,32 +25,20 @@ pub trait ValueType: Default + Debug + Hash {}
 ///
 /// **Note:** In order for the algorithms in this library to work correctly, the implementation of
 /// `Default` must yield the neutral element to the operations of `Add` and `AddAssign`.
-pub trait WeightType
-: Default + Debug + Copy + Hash + Eq + Ord + Add<Output=Self> + AddAssign {}
-
-impl<T> IndexType for T
-where
-    T: Default + Debug + Copy + Eq + Ord + Hash,
+pub trait WeightType:
+Default + Debug + Copy + Hash + Eq + Ord + Add<Output=Self> + AddAssign
 {
 }
 
-impl<T> KeyType for T
-where
-    T: Default + Debug + Copy + Eq + Ord + Hash,
-{
-}
+impl<T> IndexType for T where T: Default + Debug + Copy + Eq + Ord + Hash {}
 
-impl<T> ValueType for T
-where
-    T: Default + Debug + Hash,
-{
-}
+impl<T> KeyType for T where T: Default + Debug + Copy + Eq + Ord + Hash {}
 
-impl<T> WeightType for T
-where
-    T: Default + Debug + Copy + Hash + Eq + Ord + Add<Output=Self> + AddAssign,
-{
-}
+impl<T> ValueType for T where T: Default + Debug + Hash {}
+
+impl<T> WeightType for T where
+    T: Default + Debug + Copy + Hash + Eq + Ord + Add<Output=Self> + AddAssign
+{}
 
 /// Unit-like (i.e. zero-sized) struct that can be used as an `WeightType`.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
@@ -169,7 +157,7 @@ impl<Ix> EdgeIndex<Ix>
 where
     Ix: IndexType,
 {
-    /// /// Returns the wrapped index value
+    /// Returns the wrapped index value
     #[inline]
     pub fn index(&self) -> Ix {
         self.0
@@ -183,6 +171,16 @@ where
     fn from(ix: Ix) -> Self {
         EdgeIndex(ix)
     }
+}
+
+/// Trees implementing this trait are able to return an iterator over the children
+/// of a given tree node.
+pub trait Children<'slf, Ix = DefaultIndexType>
+    where
+        Ix: IndexType,
+{
+    /// Returns a boxed iterator over the children of the tree node `node`.
+    fn children(&'slf self, node: NodeIndex) -> Box<Iterator<Item=NodeIndex<Ix>> + 'slf>;
 }
 
 /// Trees implementing this trait are able to return an iterator over the search keys held by

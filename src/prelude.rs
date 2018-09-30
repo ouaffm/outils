@@ -18,9 +18,13 @@ pub use tree::bst::waaforest::WeightedAaForest;
 #[doc(no_inline)]
 pub use tree::bst::waatree::WeightedAaTree;
 #[doc(no_inline)]
+pub use tree::generic::{Forest, GenericForest};
+#[doc(no_inline)]
 pub use tree::traversal::Traversable;
 #[doc(no_inline)]
 pub use tree::WeightedTree;
 #[doc(no_inline)]
-pub use types::{Edge, EdgeIndex, Edges, EmptyWeight, IndexType, Keys, KeyType, NodeIndex,
-                Values, ValueType, VertexIndex, WeightType};
+pub use types::{
+    Children, Edge, EdgeIndex, Edges, EmptyWeight, IndexType, Keys, KeyType, NodeIndex, Values,
+    ValueType, VertexIndex, WeightType,
+};

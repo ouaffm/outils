@@ -1,6 +1,8 @@
 use slab;
-use super::{BinaryInOrderIndices, BinaryPostOrderIndices, BinaryPreOrderIndices,
-            GeneralBfsIndices, GeneralDfsIndices, Traversable};
+use super::{
+    BinaryInOrderIndices, BinaryPostOrderIndices, BinaryPreOrderIndices, GeneralBfsIndices,
+    GeneralDfsIndices, Traversable,
+};
 use tree::bst::aaforest::AaForest;
 use tree::bst::BalancedBinaryForest;
 use types::{NodeIndex, Tgf, ValueType};

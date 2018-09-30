@@ -2,6 +2,7 @@
 use types::{DefaultIndexType, IndexType, NodeIndex, WeightType};
 
 pub mod bst;
+pub mod generic;
 pub mod traversal;
 
 /// Trees implementing this trait are able to maintain node weights and subweights. The subweight

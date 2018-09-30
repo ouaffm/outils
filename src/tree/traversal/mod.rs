@@ -260,7 +260,9 @@ where
     /// the tree node indexed by `node`
     pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         let mut v = Vec::new();
-        tree.root(node).map(|rt| v.push(rt));
+        if let Some(rt) = tree.root(node) {
+            v.push(rt)
+        }
         BinaryPreOrderIndices {
             tree,
             stack: v,
@@ -279,7 +281,9 @@ where
     ) -> Self {
         let stack_hint = (size_hint as f64).log2().floor() as usize;
         let mut v = Vec::with_capacity(stack_hint);
-        tree.root(node).map(|rt| v.push(rt));
+        if let Some(rt) = tree.root(node) {
+            v.push(rt);
+        }
         BinaryPreOrderIndices {
             tree,
             stack: v,
@@ -296,12 +300,18 @@ where
     type Item = NodeIndex<Ix>;
 
     fn next(&mut self) -> Option<NodeIndex<Ix>> {
-        let node = self.stack.pop();
-        node.map(|n| {
-            self.tree.child(n, 1).map(|c| self.stack.push(c));
-            self.tree.child(n, 0).map(|c| self.stack.push(c));
-        });
-        node
+        match self.stack.pop() {
+            Some(n) => {
+                if let Some(c) = self.tree.child(n, 1) {
+                    self.stack.push(c);
+                }
+                if let Some(c) = self.tree.child(n, 0) {
+                    self.stack.push(c);
+                }
+                Some(n)
+            }
+            None => None,
+        }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -476,7 +486,9 @@ where
     fn next(&mut self) -> Option<NodeIndex<Ix>> {
         loop {
             if let Some(n) = self.current {
-                self.tree.child(n, 1).map(|c| self.stack.push(c));
+                if let Some(c) = self.tree.child(n, 1) {
+                    self.stack.push(c);
+                }
                 self.stack.push(n);
                 self.current = self.tree.child(n, 0);
                 continue;
@@ -637,7 +649,9 @@ where
     /// the tree node indexed by `node`
     pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         let mut v = Vec::new();
-        tree.root(node).map(|rt| v.push(rt));
+        if let Some(rt) = tree.root(node) {
+            v.push(rt);
+        }
         GeneralDfsIndices {
             tree,
             stack: v,
@@ -655,7 +669,9 @@ where
         size_hint: usize,
     ) -> Self {
         let mut v = Vec::with_capacity(size_hint);
-        tree.root(node).map(|rt| v.push(rt));
+        if let Some(rt) = tree.root(node) {
+            v.push(rt);
+        }
         GeneralDfsIndices {
             tree,
             stack: v,
@@ -676,7 +692,9 @@ where
         if let Some(n) = node {
             let cnt = self.tree.child_count(n);
             for pos in (0..cnt).rev() {
-                self.tree.child(n, pos).map(|c| self.stack.push(c));
+                if let Some(c) = self.tree.child(n, pos) {
+                    self.stack.push(c);
+                }
             }
         }
         node
@@ -815,7 +833,9 @@ where
     /// the tree node indexed by `node`
     pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         let mut v = VecDeque::new();
-        tree.root(node).map(|rt| v.push_front(rt));
+        if let Some(rt) = tree.root(node) {
+            v.push_front(rt);
+        }
         GeneralBfsIndices {
             tree,
             queue: v,
@@ -833,7 +853,9 @@ where
         size_hint: usize,
     ) -> Self {
         let mut v = VecDeque::with_capacity(size_hint);
-        tree.root(node).map(|rt| v.push_front(rt));
+        if let Some(rt) = tree.root(node) {
+            v.push_front(rt);
+        }
         GeneralBfsIndices {
             tree,
             queue: v,
@@ -854,7 +876,9 @@ where
         if let Some(n) = node {
             let cnt = self.tree.child_count(n);
             for pos in 0..cnt {
-                self.tree.child(n, pos).map(|c| self.queue.push_back(c));
+                if let Some(c) = self.tree.child(n, pos) {
+                    self.queue.push_back(c);
+                }
             }
         }
         node

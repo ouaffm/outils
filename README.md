@@ -52,7 +52,15 @@ iteratively, as in the corresponding AA tree structures above.
  - [`WeightedAaForest`][10]: This is similar to `AaForest`. However, in addition to the actual
 payload, a node weight can be stored and tree subweights are maintained.
 
+### General purpose tree data structures:
+- [`Forest`][11]: A generic forest of trees. The implementation is based on
+[arena allocation][6] and a [first child/next sibling][12] representation, thus storing the
+children of a node as a linked list headed by the first child of the parent node.
+
 ## Recent changes
+- 0.1.2
+  - Added general purpose forest data structure
+  - Fixed minor typos in documentation
 - 0.1.1
   - Travis-CI support
   - Fixed minor typos in documentation
@@ -60,25 +68,20 @@ payload, a node weight can be stored and tree subweights are maintained.
   - Initial version 
 
 ## Coming soon
-- `Arena`: An own implementation of a memory arena based on `Vec` in order to become less dependant on
-   the external crate that is currently being used.
-- `GenericTree`: A generic tree implementation using the same mechanics as the binary trees already
-   provided in this version. The implementation will use a [_left-most child/right-sibling_][11] 
-   representation in a memory arena in order to cut down on the number of allocations in situations 
-   where the maximum number of children is not known beforehand.  
-- `FixedMemoryTree`: An extension of `GenericTree` that will not exceed its assigned capacity. Rather,
+- `FixedMemoryForest`: An extension of `Forest` that will not exceed its assigned capacity. Rather,
    the data structur will use _leaf recycling_ when the tree is filled to capacity. The basic idea is 
    to keep track of accesses to leaf nodes and discard those leaves that haven't been accessed for 
    the longest time, should it become necessary to free memory. 
 
 [1]: https://en.wikipedia.org/wiki/Dynamic_connectivity
-[2]: https://docs.rs/outils/0.1.0/outils/graph/dynconn/hdt/struct.DynamicGraph.html
+[2]: https://docs.rs/outils/0.1.2/outils/graph/dynconn/hdt/struct.DynamicGraph.html
 [3]: https://en.wikipedia.org/wiki/Self-balancing_binary_search_tree
 [4]: https://en.wikipedia.org/wiki/AA_tree
-[5]: https://docs.rs/outils/0.1.0/outils/tree/bst/aatree/struct.AaTree.html
+[5]: https://docs.rs/outils/0.1.2/outils/tree/bst/aatree/struct.AaTree.html
 [6]: https://en.wikipedia.org/wiki/Region-based_memory_management
 [7]: https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
-[8]: https://docs.rs/outils/0.1.0/outils/tree/bst/waatree/struct.WeightedAaTree.html
-[9]: https://docs.rs/outils/0.1.0/outils/tree/bst/aaforest/struct.AaForest.html
-[10]: https://docs.rs/outils/0.1.0/outils/tree/bst/waaforest/struct.WeightedAaForest.html
-[11]: https://en.wikipedia.org/wiki/Left-child_right-sibling_binary_tree
+[8]: https://docs.rs/outils/0.1.2/outils/tree/bst/waatree/struct.WeightedAaTree.html
+[9]: https://docs.rs/outils/0.1.2/outils/tree/bst/aaforest/struct.AaForest.html
+[10]: https://docs.rs/outils/0.1.2/outils/tree/bst/waaforest/struct.WeightedAaForest.html
+[11]: https://docs.rs/outils/0.1.2/outils/tree/generic/struct.Forest.html
+[12]: https://en.wikipedia.org/wiki/Left-child_right-sibling_binary_tree

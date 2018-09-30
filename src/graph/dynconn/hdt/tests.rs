@@ -1,11 +1,13 @@
-use graph::dynconn::{DynamicComponent, DynamicConnectivity};
+//use graph::dynconn::{DynamicComponent, DynamicConnectivity};
+use prelude::*;
 use rand;
 use rand::Rng;
 use std::mem::{size_of, size_of_val};
-use super::{DynamicGraph, EdgeDirection, EdgeIndex, EulerVertex, VertexWeight};
-use tree::traversal::{BinaryInOrder, Traversable};
-use tree::WeightedTree;
-use types::{NodeIndex, VertexIndex};
+use super::{EdgeDirection, EdgeIndex, EulerVertex, VertexWeight};
+use tree::traversal::BinaryInOrder;
+
+//use tree::WeightedTree;
+//use types::{NodeIndex, VertexIndex};
 
 #[test]
 fn test_basic_insert() {
@@ -172,7 +174,8 @@ fn validate(dyn: &DynamicGraph<usize>) -> bool {
                 return false;
             }
             if level == 0 {
-                let edge_count_check = dyn.component_vertices(VertexIndex(i))
+                let edge_count_check = dyn
+                    .component_vertices(VertexIndex(i))
                     .flat_map(move |v| dyn.edges.edges.iter().filter(move |e| e.1.src == v))
                     .count();
                 let edge_count = dyn.component_edges(VertexIndex(i)).count();
@@ -190,19 +193,21 @@ fn validate(dyn: &DynamicGraph<usize>) -> bool {
         for i in 3..((dyn.euler[level].vertices.vertices.len() * 2) + 3) {
             assert!(
                 dyn.ext_euler.forest.value(NodeIndex(i)).is_none()
-                    || size_of_val(&dyn.ext_euler
-                    .forest
-                    .weight(NodeIndex(i))
-                    .map_or(VertexWeight::default(), |w| *w))
-                    == 3 * size_of::<usize>()
+                    || size_of_val(
+                    &dyn.ext_euler
+                        .forest
+                        .weight(NodeIndex(i))
+                        .map_or(VertexWeight::default(), |w| *w)
+                ) == 3 * size_of::<usize>()
             );
             assert!(
                 dyn.euler[level].forest.value(NodeIndex(i)).is_none()
-                    || size_of_val(&dyn.euler[level]
-                    .forest
-                    .weight(NodeIndex(i))
-                    .map_or(VertexWeight::default(), |w| *w))
-                    == 2 * size_of::<usize>()
+                    || size_of_val(
+                    &dyn.euler[level]
+                        .forest
+                        .weight(NodeIndex(i))
+                        .map_or(VertexWeight::default(), |w| *w)
+                ) == 2 * size_of::<usize>()
             );
             if dyn.euler[level].forest.value(NodeIndex(i)).is_none() {
                 continue;
@@ -210,10 +215,12 @@ fn validate(dyn: &DynamicGraph<usize>) -> bool {
             if dyn.euler[level]
                 .forest
                 .weight(NodeIndex(i))
-                .map_or(0, |w| w.act_count) != 0
+                .map_or(0, |w| w.act_count)
+                != 0
                 {
                 if dyn.euler[level].vertices[dyn.euler[level].forest[NodeIndex(i)].vertex]
-                    .active_node != NodeIndex(i)
+                    .active_node
+                    != NodeIndex(i)
                 {
                     println!("{:?} should be active at level {:?}", NodeIndex(i), level);
                     return false;
