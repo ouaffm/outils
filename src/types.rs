@@ -10,7 +10,7 @@ pub type DefaultWeightType = usize;
 
 /// Super trait for types that are supported as tree node, vertex and egde indices.
 /// This trait is implemented automatically for all types implementing the base traits
-pub trait IndexType: Default + Debug + Copy + Eq + Ord + Hash {}
+pub trait IndexType: Default + Debug + Copy + Eq + Ord {}
 
 /// Super trait for types that are supported as search keys.
 /// This trait is implemented automatically for all types implementing the base traits
@@ -18,7 +18,7 @@ pub trait KeyType: Default + Debug + Copy + Eq + Ord + Hash {}
 
 /// Super trait for types that are supported as values to be stored in the structs provided by
 /// this library. This trait is implemented automatically for all types implementing the base traits
-pub trait ValueType: Default + Debug + Hash {}
+pub trait ValueType: Default + Debug {}
 
 /// Super trait for types that are supported as tree node and vertex weights.
 /// This trait is implemented automatically for all types implementing the base traits
@@ -26,18 +26,18 @@ pub trait ValueType: Default + Debug + Hash {}
 /// **Note:** In order for the algorithms in this library to work correctly, the implementation of
 /// `Default` must yield the neutral element to the operations of `Add` and `AddAssign`.
 pub trait WeightType:
-Default + Debug + Copy + Hash + Eq + Ord + Add<Output=Self> + AddAssign
+Default + Debug + Copy + Eq + Ord + Add<Output=Self> + AddAssign
 {
 }
 
-impl<T> IndexType for T where T: Default + Debug + Copy + Eq + Ord + Hash {}
+impl<T> IndexType for T where T: Default + Debug + Copy + Eq + Ord {}
 
 impl<T> KeyType for T where T: Default + Debug + Copy + Eq + Ord + Hash {}
 
-impl<T> ValueType for T where T: Default + Debug + Hash {}
+impl<T> ValueType for T where T: Default + Debug {}
 
 impl<T> WeightType for T where
-    T: Default + Debug + Copy + Hash + Eq + Ord + Add<Output=Self> + AddAssign
+    T: Default + Debug + Copy + Eq + Ord + Add<Output=Self> + AddAssign
 {}
 
 /// Unit-like (i.e. zero-sized) struct that can be used as an `WeightType`.
