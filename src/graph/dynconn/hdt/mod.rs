@@ -937,7 +937,7 @@ impl<'dc, W> DynamicComponent<'dc> for DynamicGraph<W>
     /// assert!(vertices.contains(&c));
     /// assert!(!vertices.contains(&d)); // d is not part of the component b belongs to!
     /// ```
-    fn component_vertices(&'dc self, v: VertexIndex) -> Box<Iterator<Item=VertexIndex> + 'dc> {
+    fn component_vertices(&'dc self, v: VertexIndex) -> Box<dyn Iterator<Item=VertexIndex> + 'dc> {
         Box::new(Vertices::new(
             &self.euler[0],
             self.euler[0].vertices[v].active_node,
@@ -974,7 +974,7 @@ impl<'dc, W> DynamicComponent<'dc> for DynamicGraph<W>
     /// assert!(vertices.contains(&e) || vertices.contains(&f));
     /// assert!(vertices.contains(&g));
     /// ```
-    fn components(&'dc self) -> Box<Iterator<Item=VertexIndex> + 'dc> {
+    fn components(&'dc self) -> Box<dyn Iterator<Item=VertexIndex> + 'dc> {
         Box::new(
             self.euler[0]
                 .forest
@@ -1024,7 +1024,7 @@ impl<'dc, W> DynamicComponent<'dc> for DynamicGraph<W>
     /// assert!(efg_edges.contains(&gf));
     /// assert!(efg_edges.contains(&eg));
     /// ```
-    fn component_edges(&'dc self, v: VertexIndex) -> Box<Iterator<Item=Edge> + 'dc> {
+    fn component_edges(&'dc self, v: VertexIndex) -> Box<dyn Iterator<Item=Edge> + 'dc> {
         Box::new(
             Vertices::new(&self.euler[0], self.euler[0].vertices[v].active_node).flat_map(
                 move |v| {
@@ -1200,7 +1200,7 @@ where
     /// let a = VertexIndex(0);
     /// assert_eq!(graph.adjust_vertex_weight(a, &|w: &mut usize| *w += 2), Some(&2));
     /// ```
-    fn adjust_vertex_weight(&mut self, v: VertexIndex, f: &Fn(&mut W)) -> Option<&W> {
+    fn adjust_vertex_weight(&mut self, v: VertexIndex, f: &dyn Fn(&mut W)) -> Option<&W> {
         if size_of::<W>() > 0 && v.index() < self.size {
             let n = self.ext_euler.vertices[v].active_node;
             return self
@@ -1217,7 +1217,7 @@ impl<'slf, W> Edges<'slf> for DynamicGraph<W>
     where
         W: WeightType,
 {
-    fn edges(&'slf self) -> Box<Iterator<Item=Edge> + 'slf> {
+    fn edges(&'slf self) -> Box<dyn Iterator<Item=Edge> + 'slf> {
         Box::new(
             self.edges
                 .edges

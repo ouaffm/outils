@@ -299,7 +299,7 @@ fn waaforest_big_random_append_usize_bool_weight(bench: &mut Bencher) {
                     flag: x % 2 == 0,
                 },
             );
-            root = tree.append(root, node).map_or(root, |r| r);;
+            root = tree.append(root, node).map_or(root, |r| r);
         }
     })
 }

@@ -1132,7 +1132,7 @@ impl<'slf, V> Values<'slf, V> for AaForest<V>
     /// Returns a boxed iterator over the stored values and their corresponding
     /// tree node indices held by `self`. The values are not returned in any
     /// particular order.
-    fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
+    fn values(&'slf self) -> Box<dyn Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
         Box::new(
             self.arena
                 .iter()

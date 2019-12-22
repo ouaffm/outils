@@ -1294,7 +1294,7 @@ where
     /// assert_eq!(waaforest.weight(n2), Some(&2));
     /// assert_eq!(waaforest.subweight(n1), Some(&3));
     /// ```
-    fn adjust_weight(&mut self, node: NodeIndex, f: &Fn(&mut W)) -> Option<&W> {
+    fn adjust_weight(&mut self, node: NodeIndex, f: &dyn Fn(&mut W)) -> Option<&W> {
         let node = node.index();
         if !self.is_valid_index(node) {
             return None;
@@ -1320,7 +1320,7 @@ impl<'slf, V, W> Values<'slf, V> for WeightedAaForest<V, W>
     /// Returns a boxed iterator over the stored values and their corresponding
     /// tree node indices held by `self`. The values are not returned in any
     /// particular order.
-    fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
+    fn values(&'slf self) -> Box<dyn Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
         Box::new(
             self.arena
                 .iter()

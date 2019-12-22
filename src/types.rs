@@ -180,7 +180,7 @@ pub trait Children<'slf, Ix = DefaultIndexType>
         Ix: IndexType,
 {
     /// Returns a boxed iterator over the children of the tree node `node`.
-    fn children(&'slf self, node: NodeIndex) -> Box<Iterator<Item=NodeIndex<Ix>> + 'slf>;
+    fn children(&'slf self, node: NodeIndex) -> Box<dyn Iterator<Item=NodeIndex<Ix>> + 'slf>;
 }
 
 /// Trees implementing this trait are able to return an iterator over the search keys held by
@@ -192,7 +192,7 @@ where
 {
     /// Returns a boxed iterator over the search keys and their corresponding
     /// tree node indices held by `self`.
-    fn keys(&'slf self) -> Box<Iterator<Item=(NodeIndex<Ix>, &'slf K)> + 'slf>;
+    fn keys(&'slf self) -> Box<dyn Iterator<Item=(NodeIndex<Ix>, &'slf K)> + 'slf>;
 }
 
 /// Trees implementing this trait are able to return an iterator over the values stored by
@@ -204,7 +204,7 @@ where
 {
     /// Returns a boxed iterator over the stored values and their corresponding
     /// tree node indices held by `self`.
-    fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex<Ix>, &'slf V)> + 'slf>;
+    fn values(&'slf self) -> Box<dyn Iterator<Item=(NodeIndex<Ix>, &'slf V)> + 'slf>;
 }
 
 /// Graphs implementing this trait are able to return an iterator over the indices of
@@ -214,7 +214,7 @@ where
     Ix: IndexType,
 {
     /// Returns a boxed iterator over the indices or the vertices held by `self`.
-    fn vertices(&'slf self) -> Box<Iterator<Item = VertexIndex<Ix>> + 'slf>;
+    fn vertices(&'slf self) -> Box<dyn Iterator<Item=VertexIndex<Ix>> + 'slf>;
 }
 
 /// Graphs implementing this trait are able to return an iterator over the indices of
@@ -225,7 +225,7 @@ where
 {
     /// Returns a boxed iterator over the indices or the edges held by `self`, along with
     /// their associated vertex indices.
-    fn edges(&'slf self) -> Box<Iterator<Item=Edge<Ix>> + 'slf>;
+    fn edges(&'slf self) -> Box<dyn Iterator<Item=Edge<Ix>> + 'slf>;
 }
 
 /// Trees and graphs implementing this trait are able to export a [TGF][1] representation

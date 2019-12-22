@@ -5,7 +5,7 @@ use super::{
 };
 use crate::tree::bst::aaforest::AaForest;
 use crate::tree::bst::BalancedBinaryForest;
-use crate::types::{NodeIndex, Tgf, ValueType};
+use crate::types::{NodeIndex, ValueType};
 
 #[derive(Clone, Debug)]
 struct Node<V>

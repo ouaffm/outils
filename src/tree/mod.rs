@@ -28,5 +28,5 @@ where
     /// applying the closure, the subweight of this node as well as the subweights of the nodes on
     /// the path from this node to the tree root will be updated accordingly. If `node` was a valid
     /// index a reference to the changed weight is returned.
-    fn adjust_weight(&mut self, node: NodeIndex<Ix>, f: &Fn(&mut W)) -> Option<&W>;
+    fn adjust_weight(&mut self, node: NodeIndex<Ix>, f: &dyn Fn(&mut W)) -> Option<&W>;
 }

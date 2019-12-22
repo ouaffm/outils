@@ -42,15 +42,15 @@ where
     fn component_vertices(
         &'a self,
         v: VertexIndex<Ix>,
-    ) -> Box<Iterator<Item = VertexIndex<Ix>> + 'a>;
+    ) -> Box<dyn Iterator<Item=VertexIndex<Ix>> + 'a>;
 
     /// Returns a boxed iterator over vertices that are representatives of connected components.
     /// This implies that no vertices returned by this iterator are connected to each other.
-    fn components(&'a self) -> Box<Iterator<Item=VertexIndex<Ix>> + 'a>;
+    fn components(&'a self) -> Box<dyn Iterator<Item=VertexIndex<Ix>> + 'a>;
 
     /// Returns a boxed iterator over the indices of the edges which connect the component the
     /// vertex indexed by `v` is part of.
-    fn component_edges(&'a self, v: VertexIndex<Ix>) -> Box<Iterator<Item=Edge> + 'a>;
+    fn component_edges(&'a self, v: VertexIndex<Ix>) -> Box<dyn Iterator<Item=Edge> + 'a>;
 
     /// Deletes all edges from this graph which connect the component the
     /// vertex indexed by `v` is part of.
@@ -77,5 +77,5 @@ where
     /// Change the weight of the vertex indexed by `v` by applying the closure `f`. After applying
     /// the closure, the weight of the component this vertex belongs to will be updated accordingly.
     /// If `v` was a valid index a reference to the changed weight is returned.
-    fn adjust_vertex_weight(&mut self, v: VertexIndex<Ix>, f: &Fn(&mut W)) -> Option<&W>;
+    fn adjust_vertex_weight(&mut self, v: VertexIndex<Ix>, f: &dyn Fn(&mut W)) -> Option<&W>;
 }

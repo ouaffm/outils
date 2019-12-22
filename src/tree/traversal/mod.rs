@@ -49,7 +49,7 @@ where
     V: 'tree + ValueType,
     Ix: 'tree + IndexType,
 {
-    tree: &'tree Traversable<V, Ix>,
+    tree: &'tree dyn Traversable<V, Ix>,
     current: Option<NodeIndex<Ix>>,
     stack: Vec<NodeIndex<Ix>>,
     size_hint: (usize, Option<usize>),
@@ -80,7 +80,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`.
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         let rt = tree.root(node);
         BinaryInOrderIndices {
             tree,
@@ -95,7 +95,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -139,7 +139,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         BinaryInOrderValues {
             iter: BinaryInOrderIndices::new(tree, node),
         }
@@ -150,7 +150,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -183,7 +183,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         BinaryInOrder {
             iter: BinaryInOrderIndices::new(tree, node),
         }
@@ -194,7 +194,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -228,7 +228,7 @@ where
     V: 'tree + ValueType,
     Ix: 'tree + IndexType,
 {
-    tree: &'tree Traversable<V, Ix>,
+    tree: &'tree dyn Traversable<V, Ix>,
     stack: Vec<NodeIndex<Ix>>,
     size_hint: (usize, Option<usize>),
 }
@@ -258,7 +258,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         let mut v = Vec::new();
         if let Some(rt) = tree.root(node) {
             v.push(rt)
@@ -275,7 +275,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -326,7 +326,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         BinaryPreOrderValues {
             iter: BinaryPreOrderIndices::new(tree, node),
         }
@@ -337,7 +337,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -370,7 +370,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         BinaryPreOrder {
             iter: BinaryPreOrderIndices::new(tree, node),
         }
@@ -381,7 +381,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -415,7 +415,7 @@ where
     V: 'tree + ValueType,
     Ix: 'tree + IndexType,
 {
-    tree: &'tree Traversable<V, Ix>,
+    tree: &'tree dyn Traversable<V, Ix>,
     current: Option<NodeIndex<Ix>>,
     stack: Vec<NodeIndex<Ix>>,
     size_hint: (usize, Option<usize>),
@@ -446,7 +446,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         let rt = tree.root(node);
         BinaryPostOrderIndices {
             tree,
@@ -461,7 +461,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -528,7 +528,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         BinaryPostOrderValues {
             iter: BinaryPostOrderIndices::new(tree, node),
         }
@@ -539,7 +539,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -572,7 +572,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         BinaryPostOrder {
             iter: BinaryPostOrderIndices::new(tree, node),
         }
@@ -583,7 +583,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -617,7 +617,7 @@ where
     V: 'tree + ValueType,
     Ix: 'tree + IndexType,
 {
-    tree: &'tree Traversable<V, Ix>,
+    tree: &'tree dyn Traversable<V, Ix>,
     stack: Vec<NodeIndex<Ix>>,
     size_hint: (usize, Option<usize>),
 }
@@ -647,7 +647,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         let mut v = Vec::new();
         if let Some(rt) = tree.root(node) {
             v.push(rt);
@@ -664,7 +664,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -712,7 +712,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         GeneralDfsValues {
             iter: GeneralDfsIndices::new(tree, node),
         }
@@ -723,7 +723,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -756,7 +756,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         GeneralDfs {
             iter: GeneralDfsIndices::new(tree, node),
         }
@@ -767,7 +767,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -801,7 +801,7 @@ where
     V: 'tree + ValueType,
     Ix: 'tree + IndexType,
 {
-    tree: &'tree Traversable<V, Ix>,
+    tree: &'tree dyn Traversable<V, Ix>,
     queue: VecDeque<NodeIndex<Ix>>,
     size_hint: (usize, Option<usize>),
 }
@@ -831,7 +831,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         let mut v = VecDeque::new();
         if let Some(rt) = tree.root(node) {
             v.push_front(rt);
@@ -848,7 +848,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -896,7 +896,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         GeneralBfsValues {
             iter: GeneralBfsIndices::new(tree, node),
         }
@@ -907,7 +907,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {
@@ -940,7 +940,7 @@ where
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
-    pub fn new(tree: &'tree Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
+    pub fn new(tree: &'tree dyn Traversable<V, Ix>, node: NodeIndex<Ix>) -> Self {
         GeneralBfs {
             iter: GeneralBfsIndices::new(tree, node),
         }
@@ -951,7 +951,7 @@ where
     /// `Traversable` tree to be iterated over, such that the internal stack does not need to be
     /// re-allocated.
     pub fn with_capacity(
-        tree: &'tree Traversable<V, Ix>,
+        tree: &'tree dyn Traversable<V, Ix>,
         node: NodeIndex<Ix>,
         size_hint: usize,
     ) -> Self {

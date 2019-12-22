@@ -871,7 +871,7 @@ where
     /// Returns a boxed iterator over the search keys and their corresponding
     /// tree node indices held by `self`. The keys are returned in the order
     /// of the search keys.
-    fn keys(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf K)> + 'slf> {
+    fn keys(&'slf self) -> Box<dyn Iterator<Item=(NodeIndex, &'slf K)> + 'slf> {
         if self.root == self.nil {
             return Box::new(empty::<(NodeIndex, &'slf K)>());
         }
@@ -890,7 +890,7 @@ where
     /// Returns a boxed iterator over the stored values and their corresponding
     /// tree node indices held by `self`. The keys are returned in the order
     /// of the corresponding search keys.
-    fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
+    fn values(&'slf self) -> Box<dyn Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
         if self.root == self.nil {
             return Box::new(empty::<(NodeIndex, &'slf V)>());
         }

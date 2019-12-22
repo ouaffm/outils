@@ -352,7 +352,7 @@ impl<'slf, V> Children<'slf> for Forest<V>
     where
         V: 'slf + ValueType,
 {
-    fn children(&'slf self, node: NodeIndex) -> Box<Iterator<Item=NodeIndex> + 'slf> {
+    fn children(&'slf self, node: NodeIndex) -> Box<dyn Iterator<Item=NodeIndex> + 'slf> {
         Box::new(ChildIterator::new(self, node))
     }
 }
@@ -429,7 +429,7 @@ impl<'slf, V> Values<'slf, V> for Forest<V>
 {
     /// Returns a boxed iterator over the stored values and their corresponding
     /// tree node indices held by `self`.
-    fn values(&'slf self) -> Box<Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
+    fn values(&'slf self) -> Box<dyn Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
         Box::new(self.arena.iter().map(|(i, v)| (NodeIndex(i), &v.value)))
     }
 }
