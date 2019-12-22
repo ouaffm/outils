@@ -27,8 +27,8 @@ type BalancedForest<W> = WeightedAaForest<EulerVertex, VertexWeight<W>>;
 
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
 struct VertexWeight<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     adj_count: usize,
     act_count: usize,
@@ -36,8 +36,8 @@ where
 }
 
 impl<W> VertexWeight<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     fn new(adj_count: usize, act_count: usize) -> Self {
         VertexWeight {
@@ -49,8 +49,8 @@ where
 }
 
 impl<W> Add for VertexWeight<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     type Output = VertexWeight<W>;
 
@@ -64,8 +64,8 @@ where
 }
 
 impl<W> AddAssign for VertexWeight<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     fn add_assign(&mut self, other: VertexWeight<W>) {
         *self = VertexWeight {
@@ -260,16 +260,16 @@ struct EulerCutContext {
 
 #[derive(Clone, Debug)]
 struct EulerForest<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     forest: BalancedForest<W>,
     vertices: DynamicVertexList,
 }
 
 impl<W> EulerForest<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     fn new(size: usize, adjacency_hint: usize) -> Self {
         let mut vertices = DynamicVertexList::new(size);
@@ -670,8 +670,8 @@ where
 ///
 #[derive(Clone, Debug)]
 pub struct DynamicGraph<W = EmptyWeight>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     size: usize,
     adjacency_hint: usize,
@@ -682,8 +682,8 @@ where
 }
 
 impl<W> DynamicGraph<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     /// Construct a `DynamicGraph` with a fixed number of vertices, i.e. `size` and with an expected
     /// degree (i.e. number of adjacent edges) of `adjacency_hint`.
@@ -699,7 +699,7 @@ where
         let max_level = (size as f64).log2().floor() as usize;
 
         let mut euler = Vec::with_capacity(max_level + 1);
-        for _ in 0..max_level + 1 {
+        for _ in 0..=max_level {
             euler.push(EulerForest::new(size, adjacency_hint));
         }
 
@@ -740,7 +740,7 @@ where
     fn insert_tree_edge(&mut self, level: usize, e: EdgeIndex) {
         self.edges[e].is_tree_edge = true;
         self.edges[e].level = level;
-        for i in (0..level + 1).rev() {
+        for i in (0..=level).rev() {
             self.euler[i].link(e, &self.edges);
         }
     }
@@ -748,7 +748,7 @@ where
     fn delete_tree_edge(&mut self, e: EdgeIndex) {
         self.edges[e].is_tree_edge = false;
         let level = self.edges[e].level;
-        for i in (0..level + 1).rev() {
+        for i in (0..=level).rev() {
             self.euler[i].cut(e, &self.edges);
         }
     }
@@ -785,7 +785,7 @@ where
         let dst = self.edges[e].dst;
         let e_level = self.edges[e].level;
 
-        for level in (0..e_level + 1).rev() {
+        for level in (0..=e_level).rev() {
             let (smaller_tree, _) = self.euler[level].tree_roots_ordered(src, dst);
 
             let mut state = TreeEdgesState::new(&self.euler[level], smaller_tree);
@@ -822,8 +822,8 @@ where
 }
 
 impl<W> DynamicConnectivity<W> for DynamicGraph<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     /// Connects the vertices indexed by `v` and `w` and returns the index of the created edge.
     ///
@@ -878,9 +878,9 @@ where
         if !self.edges.edges.contains(idx.index())
             || self.edges[idx].src != e.src()
             || self.edges[idx].dst != e.dst()
-            {
-                return;
-            }
+        {
+            return;
+        }
         if self.edges[idx].is_tree_edge {
             if size_of::<W>() > 0 {
                 self.delete_tree_edge(idx);
@@ -1104,8 +1104,8 @@ impl<'dc, W> DynamicComponent<'dc> for DynamicGraph<W>
 }
 
 impl<W> DynamicWeightedComponent<W> for DynamicGraph<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     /// Set the weight of the vertex indexed by `v` to `weight` and update the weight of the
     /// component this vertex belongs to. If `v` was a valid index, the old weight is returned.
@@ -1234,8 +1234,8 @@ struct VerticesState<W> {
 }
 
 impl<W> VerticesState<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     fn new(euler: &EulerForest<W>, node: NodeIndex) -> Self {
         let mut min_size = 0;
@@ -1284,7 +1284,7 @@ where
 
 struct Vertices<'dc, W>
     where
-        W: 'dc + WeightType,
+        W: WeightType,
 {
     euler: &'dc EulerForest<W>,
     state: VerticesState<W>,
@@ -1317,16 +1317,16 @@ impl<'dc, W> Iterator for Vertices<'dc, W>
 }
 
 struct TreeEdgesState<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     stack: Vec<NodeIndex>,
     _phantom: PhantomData<W>,
 }
 
 impl<W> TreeEdgesState<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     fn new(euler: &EulerForest<W>, node: NodeIndex) -> Self {
         let mut v;
@@ -1370,8 +1370,8 @@ where
 }
 
 struct NonTreeEdgesState<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     stack: Vec<NodeIndex>,
     vertex: Option<VertexIndex>,
@@ -1380,8 +1380,8 @@ where
 }
 
 impl<W> NonTreeEdgesState<W>
-where
-    W: WeightType,
+    where
+        W: WeightType,
 {
     fn new(euler: &EulerForest<W>, node: NodeIndex) -> Self {
         let mut v;

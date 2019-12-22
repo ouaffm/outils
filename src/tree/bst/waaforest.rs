@@ -26,9 +26,9 @@ struct Node<V, W>
 }
 
 impl<V, W> Node<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     fn new() -> Self {
         Node {
@@ -54,9 +54,9 @@ where
 }
 
 impl<V, W> Index<BstDirection> for Node<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     type Output = usize;
     fn index(&self, index: BstDirection) -> &usize {
@@ -65,9 +65,9 @@ where
 }
 
 impl<V, W> IndexMut<BstDirection> for Node<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     fn index_mut(&mut self, index: BstDirection) -> &mut usize {
         &mut self.children[index as usize]
@@ -75,9 +75,9 @@ where
 }
 
 impl<V, W> Index<usize> for Node<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     type Output = usize;
     fn index(&self, index: usize) -> &usize {
@@ -86,9 +86,9 @@ where
 }
 
 impl<V, W> IndexMut<usize> for Node<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     fn index_mut(&mut self, index: usize) -> &mut usize {
         &mut self.children[index as usize]
@@ -143,9 +143,9 @@ where
 ///
 #[derive(Clone, Debug)]
 pub struct WeightedAaForest<V, W = DefaultWeightType>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     arena: slab::Slab<Node<V, W>>,
     nil: usize,
@@ -154,9 +154,9 @@ where
 }
 
 impl<V, W> WeightedAaForest<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     /// Construct a new empty `WeigthedAaForest` with an initial capacity of `size`.
     pub fn new(size: usize) -> Self {
@@ -563,9 +563,9 @@ where
 }
 
 impl<V, W> BalancedBinaryForest<V> for WeightedAaForest<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     // Insert a new singleton node containing `value` into the forest and set its weight to `W::default()`.
     fn insert(&mut self, value: V) -> NodeIndex {
@@ -905,9 +905,9 @@ where
 }
 
 impl<V, W> Traversable<V> for WeightedAaForest<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     /// Returns the index of the root node of the tree containing the tree node indexed by `node`.
     /// In case of an invalid index, `None` is returned.
@@ -1033,9 +1033,9 @@ where
 }
 
 impl<V, W> OrderedTree for WeightedAaForest<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     /// Returns the biggest node of the left subtree of the tree node indexed by `node`.
     ///
@@ -1206,9 +1206,9 @@ where
 }
 
 impl<V, W> WeightedTree<W> for WeightedAaForest<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     /// Set the weight of the tree node indexed by `node` to `weight` and update the subweight
     /// of this node as well as the subweights of the nodes on the path from this node to the tree
@@ -1331,9 +1331,9 @@ impl<'slf, V, W> Values<'slf, V> for WeightedAaForest<V, W>
 }
 
 impl<V, W> Index<NodeIndex> for WeightedAaForest<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     type Output = V;
     fn index(&self, index: NodeIndex) -> &V {
@@ -1342,9 +1342,9 @@ where
 }
 
 impl<V, W> IndexMut<NodeIndex> for WeightedAaForest<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     fn index_mut(&mut self, index: NodeIndex) -> &mut V {
         &mut self.arena[index.index()].value
@@ -1352,9 +1352,9 @@ where
 }
 
 impl<V, W> Tgf for WeightedAaForest<V, W>
-where
-    V: ValueType,
-    W: WeightType,
+    where
+        V: ValueType,
+        W: WeightType,
 {
     fn to_tgf(&self) -> String {
         let mut nodes = String::from("");

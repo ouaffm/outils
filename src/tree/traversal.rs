@@ -17,9 +17,9 @@ mod tests;
 
 /// This trait defines the interface for using the traversal iterators provided by this module.
 pub trait Traversable<V, Ix = DefaultIndexType>
-where
-    V: ValueType,
-    Ix: IndexType,
+    where
+        V: ValueType,
+        Ix: IndexType,
 {
     /// Returns the index of the root node of the tree containing the tree node indexed by `node`.
     fn root(&self, node: NodeIndex<Ix>) -> Option<NodeIndex<Ix>>;
@@ -45,9 +45,9 @@ where
 
 /// Iterator over node indices in binary in-order
 pub struct BinaryInOrderIndices<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     tree: &'tree dyn Traversable<V, Ix>,
     current: Option<NodeIndex<Ix>>,
@@ -57,26 +57,26 @@ where
 
 /// Iterator over node contents in binary in-order
 pub struct BinaryInOrderValues<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     iter: BinaryInOrderIndices<'tree, V, Ix>,
 }
 
 /// Iterator over node contents and the corresponding node indices in binary in-order
 pub struct BinaryInOrder<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     iter: BinaryInOrderIndices<'tree, V, Ix>,
 }
 
 impl<'tree, V, Ix> BinaryInOrderIndices<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`.
@@ -111,9 +111,9 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for BinaryInOrderIndices<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = NodeIndex<Ix>;
 
@@ -133,9 +133,9 @@ where
 }
 
 impl<'tree, V, Ix> BinaryInOrderValues<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -161,9 +161,9 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for BinaryInOrderValues<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = &'tree V;
 
@@ -177,9 +177,9 @@ where
 }
 
 impl<'tree, V, Ix> BinaryInOrder<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -205,16 +205,16 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for BinaryInOrder<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = (NodeIndex<Ix>, &'tree V);
 
     fn next(&mut self) -> Option<(NodeIndex<Ix>, &'tree V)> {
         self.iter
             .next()
-            .and_then(|n| self.iter.tree.value(n).and_then(|v| Some((n, v))))
+            .and_then(|n| self.iter.tree.value(n).map(|v| (n, v)))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -224,9 +224,9 @@ where
 
 /// Iterator over node indices in binary pre-order
 pub struct BinaryPreOrderIndices<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     tree: &'tree dyn Traversable<V, Ix>,
     stack: Vec<NodeIndex<Ix>>,
@@ -235,26 +235,26 @@ where
 
 /// Iterator over node contents in binary pre-order
 pub struct BinaryPreOrderValues<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     iter: BinaryPreOrderIndices<'tree, V, Ix>,
 }
 
 /// Iterator over node contents and the corresponding node indices in binary pre-order
 pub struct BinaryPreOrder<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     iter: BinaryPreOrderIndices<'tree, V, Ix>,
 }
 
 impl<'tree, V, Ix> BinaryPreOrderIndices<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -293,9 +293,9 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for BinaryPreOrderIndices<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = NodeIndex<Ix>;
 
@@ -320,9 +320,9 @@ where
 }
 
 impl<'tree, V, Ix> BinaryPreOrderValues<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -348,9 +348,9 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for BinaryPreOrderValues<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = &'tree V;
 
@@ -364,9 +364,9 @@ where
 }
 
 impl<'tree, V, Ix> BinaryPreOrder<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -392,16 +392,16 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for BinaryPreOrder<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = (NodeIndex<Ix>, &'tree V);
 
     fn next(&mut self) -> Option<(NodeIndex<Ix>, &'tree V)> {
         self.iter
             .next()
-            .and_then(|n| self.iter.tree.value(n).and_then(|v| Some((n, v))))
+            .and_then(|n| self.iter.tree.value(n).map(|v| (n, v)))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -411,9 +411,9 @@ where
 
 /// Iterator over node indices in binary post-order
 pub struct BinaryPostOrderIndices<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     tree: &'tree dyn Traversable<V, Ix>,
     current: Option<NodeIndex<Ix>>,
@@ -423,26 +423,26 @@ where
 
 /// Iterator over node contents in binary post-order
 pub struct BinaryPostOrderValues<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     iter: BinaryPostOrderIndices<'tree, V, Ix>,
 }
 
 /// Iterator over node contents and the corresponding node indices in binary post-order
 pub struct BinaryPostOrder<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     iter: BinaryPostOrderIndices<'tree, V, Ix>,
 }
 
 impl<'tree, V, Ix> BinaryPostOrderIndices<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -477,9 +477,9 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for BinaryPostOrderIndices<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = NodeIndex<Ix>;
 
@@ -522,9 +522,9 @@ where
 }
 
 impl<'tree, V, Ix> BinaryPostOrderValues<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -550,9 +550,9 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for BinaryPostOrderValues<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = &'tree V;
 
@@ -566,9 +566,9 @@ where
 }
 
 impl<'tree, V, Ix> BinaryPostOrder<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -594,16 +594,16 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for BinaryPostOrder<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = (NodeIndex<Ix>, &'tree V);
 
     fn next(&mut self) -> Option<(NodeIndex<Ix>, &'tree V)> {
         self.iter
             .next()
-            .and_then(|n| self.iter.tree.value(n).and_then(|v| Some((n, v))))
+            .and_then(|n| self.iter.tree.value(n).map(|v| (n, v)))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -613,9 +613,9 @@ where
 
 /// Iterator over node indices in depth-first search order
 pub struct GeneralDfsIndices<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     tree: &'tree dyn Traversable<V, Ix>,
     stack: Vec<NodeIndex<Ix>>,
@@ -624,26 +624,26 @@ where
 
 /// Iterator over node contents in depth-first search order
 pub struct GeneralDfsValues<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     iter: GeneralDfsIndices<'tree, V, Ix>,
 }
 
 /// Iterator over node contents and the corresponding node indices in depth-first search order
 pub struct GeneralDfs<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     iter: GeneralDfsIndices<'tree, V, Ix>,
 }
 
 impl<'tree, V, Ix> GeneralDfsIndices<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -681,9 +681,9 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for GeneralDfsIndices<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = NodeIndex<Ix>;
 
@@ -706,9 +706,9 @@ where
 }
 
 impl<'tree, V, Ix> GeneralDfsValues<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -734,9 +734,9 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for GeneralDfsValues<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = &'tree V;
 
@@ -750,9 +750,9 @@ where
 }
 
 impl<'tree, V, Ix> GeneralDfs<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -778,16 +778,16 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for GeneralDfs<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = (NodeIndex<Ix>, &'tree V);
 
     fn next(&mut self) -> Option<(NodeIndex<Ix>, &'tree V)> {
         self.iter
             .next()
-            .and_then(|n| self.iter.tree.value(n).and_then(|v| Some((n, v))))
+            .and_then(|n| self.iter.tree.value(n).map(|v| (n, v)))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -797,9 +797,9 @@ where
 
 /// Iterator over node indices in breadth-first search order
 pub struct GeneralBfsIndices<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     tree: &'tree dyn Traversable<V, Ix>,
     queue: VecDeque<NodeIndex<Ix>>,
@@ -808,26 +808,26 @@ where
 
 /// Iterator over node contents in breadth-first search order
 pub struct GeneralBfsValues<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     iter: GeneralBfsIndices<'tree, V, Ix>,
 }
 
 /// Iterator over node contents and the corresponding node indices in breadth-first search order
 pub struct GeneralBfs<'tree, V, Ix = DefaultIndexType>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     iter: GeneralBfsIndices<'tree, V, Ix>,
 }
 
 impl<'tree, V, Ix> GeneralBfsIndices<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -865,9 +865,9 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for GeneralBfsIndices<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = NodeIndex<Ix>;
 
@@ -890,9 +890,9 @@ where
 }
 
 impl<'tree, V, Ix> GeneralBfsValues<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -918,9 +918,9 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for GeneralBfsValues<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = &'tree V;
 
@@ -934,9 +934,9 @@ where
 }
 
 impl<'tree, V, Ix> GeneralBfs<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: 'tree + IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: 'tree + IndexType,
 {
     /// Construct an iterator over **all** nodes of the `Traversable` tree containing
     /// the tree node indexed by `node`
@@ -962,16 +962,16 @@ where
 }
 
 impl<'tree, V, Ix> Iterator for GeneralBfs<'tree, V, Ix>
-where
-    V: 'tree + ValueType,
-    Ix: IndexType,
+    where
+        V: 'tree + ValueType,
+        Ix: IndexType,
 {
     type Item = (NodeIndex<Ix>, &'tree V);
 
     fn next(&mut self) -> Option<(NodeIndex<Ix>, &'tree V)> {
         self.iter
             .next()
-            .and_then(|n| self.iter.tree.value(n).and_then(|v| Some((n, v))))
+            .and_then(|n| self.iter.tree.value(n).map(|v| (n, v)))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {

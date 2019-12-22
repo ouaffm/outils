@@ -94,7 +94,7 @@ impl<Ix> TreeError<Ix> {
 }
 
 impl fmt::Display for TreeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.error {
             TreeErrorType::InvalidNodeIndex { node } => write!(
                 f,

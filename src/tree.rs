@@ -9,9 +9,9 @@ pub mod traversal;
 /// of a tree node is recursively defined as the sum of its own weight plus the subweights of its
 /// children. The subweight of a leaf node is equal to its weight.
 pub trait WeightedTree<W, Ix = DefaultIndexType>
-where
-    W: WeightType,
-    Ix: IndexType,
+    where
+        W: WeightType,
+        Ix: IndexType,
 {
     /// Set the weight of the tree node indexed by `node` to `weight` and update the subweight
     /// of this node as well as the subweights of the nodes on the path from this node to the tree

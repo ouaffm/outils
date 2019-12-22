@@ -29,10 +29,10 @@ impl BstDirection {
 
 /// This trait defines the fundamental operations of a binary search tree.
 pub trait BinarySearchTree<K, V, Ix = DefaultIndexType>
-where
-    K: KeyType,
-    V: ValueType,
-    Ix: IndexType,
+    where
+        K: KeyType,
+        V: ValueType,
+        Ix: IndexType,
 {
     /// Inserts a key-value pair into the tree. If the tree did not have this `key` present, `None`
     /// is returned. If the tree **did** have this `key` present, the value is updated, and the old
@@ -60,8 +60,8 @@ where
 
 /// This trait defines operations for navigating the binary tree with respect to its in-order.
 pub trait OrderedTree<Ix = DefaultIndexType>
-where
-    Ix: IndexType,
+    where
+        Ix: IndexType,
 {
     /// Returns the biggest node of the left subtree of the tree node indexed by `node`.
     fn sub_predecessor(&self, node: NodeIndex<Ix>) -> Option<NodeIndex<Ix>>;
@@ -101,9 +101,9 @@ where
 /// would require a significant number of insert and delete operation in order to split or concatenate
 /// trees, while without search keys only re-balancing is required.
 pub trait BalancedBinaryForest<V, Ix = DefaultIndexType>
-where
-    V: ValueType,
-    Ix: IndexType,
+    where
+        V: ValueType,
+        Ix: IndexType,
 {
     /// Inserts `value` into the forest as a new singleton (i.e. sole leaf) node.
     fn insert(&mut self, value: V) -> NodeIndex<Ix>;

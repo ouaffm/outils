@@ -1,11 +1,9 @@
-#![allow(clippy)]
-
 #[macro_use]
 extern crate bencher;
 #[macro_use]
 extern crate lazy_static;
-extern crate outils;
-extern crate rand;
+
+use rand;
 
 use bencher::Bencher;
 use outils::graph::dynconn::{DynamicConnectivity, DynamicWeightedComponent};
@@ -60,7 +58,7 @@ struct UsizeBoolWeight {
 }
 
 impl Display for UsizeBoolWeight {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {})", self.weight, self.flag)
     }
 }
@@ -91,7 +89,7 @@ struct Usize2Weight {
 }
 
 impl Display for Usize2Weight {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {})", self.weight[0], self.weight[1])
     }
 }
@@ -132,7 +130,7 @@ struct CombinedWeight {
 }
 
 impl Display for CombinedWeight {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "({} {} {}, {})",
@@ -174,7 +172,7 @@ impl AddAssign for BitboardWeight {
 }
 
 impl Display for BitboardWeight {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "({} {} {} {} {} {})",

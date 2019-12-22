@@ -1,5 +1,5 @@
 //!
-//! `AaTree<K, V>` is an unweighted balanced binary search tree data structure.
+//! `WeightedAaTree<K, V, W>` is a weighted balanced binary search tree data structure.
 //!
 use slab;
 use std::cmp::Ordering;
@@ -8,54 +8,64 @@ use std::mem::swap;
 use std::ops::{Index, IndexMut};
 use crate::tree::bst::{BinarySearchTree, BstDirection, OrderedTree};
 use crate::tree::traversal::{BinaryInOrder, BinaryInOrderIndices, Traversable};
-use crate::types::{Keys, KeyType, NodeIndex, Tgf, Values, ValueType};
+use crate::tree::WeightedTree;
+use crate::types::{DefaultWeightType, Keys, KeyType, NodeIndex, Tgf, Values, ValueType, WeightType};
 
 #[cfg(test)]
 mod tests;
 
 #[derive(Clone, Debug)]
-struct Node<K, V>
+struct Node<K, V, W>
     where
         K: KeyType,
         V: ValueType,
+        W: WeightType,
 {
     key: K,
     value: V,
     level: usize,
+    weight: W,
+    subweight: W,
     parent: usize,
     children: [usize; 2],
 }
 
-impl<K, V> Node<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> Node<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
     fn new() -> Self {
         Node {
             key: K::default(),
             value: V::default(),
             level: 0,
+            weight: W::default(),
+            subweight: W::default(),
             parent: 0,
             children: [0, 0],
         }
     }
 
-    fn new_leaf(key: K, value: V) -> Self {
+    fn new_leaf(key: K, value: V, weight: W) -> Self {
         Node {
             key,
             value,
             level: 1,
+            weight,
+            subweight: weight,
             parent: 0,
             children: [0, 0],
         }
     }
 }
 
-impl<K, V> Index<BstDirection> for Node<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> Index<BstDirection> for Node<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
     type Output = usize;
     fn index(&self, index: BstDirection) -> &usize {
@@ -63,20 +73,22 @@ where
     }
 }
 
-impl<K, V> IndexMut<BstDirection> for Node<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> IndexMut<BstDirection> for Node<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
     fn index_mut(&mut self, index: BstDirection) -> &mut usize {
         &mut self.children[index as usize]
     }
 }
 
-impl<K, V> Index<usize> for Node<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> Index<usize> for Node<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
     type Output = usize;
     fn index(&self, index: usize) -> &usize {
@@ -84,86 +96,113 @@ where
     }
 }
 
-impl<K, V> IndexMut<usize> for Node<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> IndexMut<usize> for Node<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
     fn index_mut(&mut self, index: usize) -> &mut usize {
         &mut self.children[index as usize]
     }
 }
 
-/// `AaTree<K, V>` is a balanced binary search tree data structure. Its tree nodes
-/// are held in a [memory arena][1] and are addressed through their associated `NodeIndex`.
+/// `WeightedAaTree<K, V, W>` is a weighted balanced binary search tree data structure. Its tree
+/// nodes are held in a [memory arena][1] and are addressed through their associated `NodeIndex`.
 ///
 /// The balancing method for maintaining a tree height of log(n) where n is the number nodes
 /// in the tree is described here: [AA tree][2].
 ///
-/// `AaTree` is parameterized over:
+/// `WeightedAaTree` is parameterized over:
 ///
 /// - Search keys of type `K`, where `K` must implement the trait [`KeyType`][3]
 /// - Associated values of type `V`, where `V` must implement the trait [`ValueType`][4]
+/// - Associated node weights and subweights of type `W`, where `W` must
+///   implement the trait [`WeightType`][5].
 ///
-/// The usage of `AaTree` resembles that of [`BTreeMap`][5] from the standard library:
+/// The usage of `WeightedAaTree` resembles that of [`BTreeMap`][6] from the standard library:
 ///
 /// ```
 /// use std::collections::BTreeMap;
 /// use outils::prelude::*;
 ///
 /// let mut btreemap = BTreeMap::new();
-/// let mut aatree = AaTree::new(10);
+/// let mut waatree = WeightedAaTree::new(10);
 ///
 /// btreemap.insert("DE", "Germany");
 /// btreemap.insert("FR", "France");
 /// btreemap.insert("IT", "Italy");
 ///
-/// aatree.insert("DE", "Germany");
-/// aatree.insert("FR", "France");
-/// aatree.insert("IT", "Italy");
+/// waatree.insert_weighted("DE", "Germany", 1);
+/// waatree.insert_weighted("FR", "France", 1);
+/// waatree.insert_weighted("IT", "Italy", 1);
 ///
 /// assert_eq!(btreemap.get(&"DE"), Some(&"Germany"));
-/// assert_eq!(aatree.get(&"DE"), Some(&"Germany"));
+/// assert_eq!(waatree.get(&"DE"), Some(&"Germany"));
 ///
 /// assert_eq!(btreemap.remove(&"FR"), Some("France"));
-/// assert_eq!(aatree.remove(&"FR"), Some("France"));
+/// assert_eq!(waatree.remove(&"FR"), Some("France"));
 ///
 /// assert_eq!(btreemap.get(&"FR"), None);
-/// assert_eq!(aatree.get(&"FR"), None);
+/// assert_eq!(waatree.get(&"FR"), None);
 /// ```
 ///
 /// For most use cases, it is recommended to simply use `BTreeMap`, as it is considerably
 /// faster (appr. 50%). However, if information on parent and child relations between tree nodes,
-/// or custom traversal of the tree as such, are needed, `AaTree` has an advantage over `BTreeMap`.
+/// or custom traversal of the tree as such, are needed, `WeightedAaTree` has an advantage over `BTreeMap`.
+///
+/// Also, the capability of managing node weights and subweights offers additional possibilities to
+/// reason about trees. For example, simply storing a node weight of 1 with each item in the tree
+/// will result in the size of the subtree of a node being stored in its subweight:
+///
+/// ```
+/// use outils::prelude::*;                     // The resulting tree is shown below:
+/// let mut waatree = WeightedAaTree::new(10);  //       -- (3) --
+///                                             //      /         \
+/// for i in 0..7 {                             //    (1)         (5)
+///     waatree.insert_weighted(i, i, 1);       //   /   \       /   \
+/// }                                           // (0)   (2)    (4)   (6)
+///
+/// let n1 = waatree.index(&1).expect("Key '1' should be present");
+/// let n3 = waatree.index(&3).expect("Key '3' should be present");
+/// let n4 = waatree.index(&4).expect("Key '4' should be present");
+///
+/// assert_eq!(waatree.subweight(n1), Some(&3)); // The subtree rooted in 1 consists of 3 nodes.
+/// assert_eq!(waatree.subweight(n3), Some(&7)); // The subtree rooted in 3 consists of 7 nodes.
+/// assert_eq!(waatree.subweight(n4), Some(&1)); // The subtree rooted in 4 consists of 1 node.
+/// ```
 ///
 /// [1]: https://en.wikipedia.org/wiki/Region-based_memory_management
 /// [2]: https://en.wikipedia.org/wiki/AA_tree
 /// [3]: types/trait.KeyType.html
 /// [4]: ../../../types/trait.ValueType.html
-/// [5]: https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
+/// [5]: ../../../types/trait.WeightType.html
+/// [6]: https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
 ///
 #[derive(Clone, Debug)]
-pub struct AaTree<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+pub struct WeightedAaTree<K, V, W = DefaultWeightType>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
-    arena: slab::Slab<Node<K, V>>,
+    arena: slab::Slab<Node<K, V, W>>,
     root: usize,
     nil: usize,
 }
 
-impl<K, V> AaTree<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> WeightedAaTree<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
-    /// Construct a new empty `AaTree` with an initial capacity of `size`.
+    /// Construct a new empty `WeightedAaTree` with an initial capacity of `size`.
     pub fn new(size: usize) -> Self {
         let mut a = slab::Slab::with_capacity(size + 1);
         let n = a.insert(Node::new());
 
-        AaTree {
+        WeightedAaTree {
             arena: a,
             root: n,
             nil: n,
@@ -175,33 +214,6 @@ where
             return None;
         }
         Some(key.cmp(&self.arena[node].key))
-    }
-
-    fn link(&mut self, parent: usize, child: usize, dir: BstDirection) {
-        if parent == child {
-            return;
-        }
-        if parent != self.nil {
-            self.arena[parent][dir] = child;
-            if child != self.nil {
-                self.arena[child].parent = parent;
-            }
-        } else {
-            self.arena[child].parent = self.nil;
-            self.root = child;
-        }
-    }
-
-    fn unlink(&mut self, parent: usize, child: usize, dir: BstDirection) {
-        if parent == child {
-            return;
-        }
-        if parent != self.nil {
-            self.arena[parent][dir] = self.nil;
-            if child != self.nil {
-                self.arena[child].parent = self.nil;
-            }
-        }
     }
 
     fn skew_node(&mut self, node: usize) -> usize {
@@ -227,6 +239,8 @@ where
             self.link(parent, left, dir);
             self.link(left, node, BstDirection::Right);
             self.link(node, left_right, BstDirection::Left);
+            self.update_weights(node);
+            self.update_weights(left);
         }
         ret
     }
@@ -256,8 +270,45 @@ where
             self.link(right, node, BstDirection::Left);
             self.link(node, right_left, BstDirection::Right);
             self.arena[right].level += 1;
+            self.update_weights(node);
+            self.update_weights(right);
         }
         ret
+    }
+
+    fn update_weights(&mut self, node: usize) {
+        let left = self.arena[node][BstDirection::Left];
+        let right = self.arena[node][BstDirection::Right];
+        let subweight =
+            self.arena[node].weight + self.arena[left].subweight + self.arena[right].subweight;
+        self.arena[node].subweight = subweight;
+    }
+
+    fn link(&mut self, parent: usize, child: usize, dir: BstDirection) {
+        if parent == child {
+            return;
+        }
+        if parent != self.nil {
+            self.arena[parent][dir] = child;
+            if child != self.nil {
+                self.arena[child].parent = parent;
+            }
+        } else {
+            self.arena[child].parent = self.nil;
+            self.root = child;
+        }
+    }
+
+    fn unlink(&mut self, parent: usize, child: usize, dir: BstDirection) {
+        if parent == child {
+            return;
+        }
+        if parent != self.nil {
+            self.arena[parent][dir] = self.nil;
+            if child != self.nil {
+                self.arena[child].parent = self.nil;
+            }
+        }
     }
 
     fn find_node(&self, key: &K) -> Option<usize> {
@@ -286,6 +337,75 @@ where
             }
             parent = child;
         }
+    }
+
+    /// Inserts a key-value pair into the `WeightedAaTree` and assign the node the weight `weight`.
+    /// If the tree did not have this `key` present, `None` is returned. If the tree **did** have
+    /// this `key` present, the value and the weight are updated, and the old value is returned.
+    /// Note that in this situation, the key is left unchanged.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut waatree = WeightedAaTree::new(10);
+    ///
+    /// assert_eq!(waatree.insert_weighted("KEY-1", "VALUE-1", 1), None);
+    /// assert_eq!(waatree.insert_weighted("KEY-2", "VALUE-2", 1), None);
+    /// assert_eq!(waatree.insert_weighted("KEY-1", "VALUE-3", 3), Some("VALUE-1"));
+    /// assert_eq!(waatree.get(&"KEY-1"), Some(&"VALUE-3"));
+    /// assert_eq!(waatree.get(&"KEY-2"), Some(&"VALUE-2"));
+    ///
+    /// let n1 = waatree.index(&"KEY-1").expect("KEY-1 should be present!");
+    /// assert_eq!(waatree.weight(n1), Some(&3)); // Weight of KEY-1 changed from 1 to 3.
+    /// ```
+    pub fn insert_weighted(&mut self, key: K, value: V, weight: W) -> Option<V> {
+        if self.root == self.nil {
+            self.root = self.arena.insert(Node::new_leaf(key, value, weight));
+            return None;
+        }
+
+        let mut parent = self.root;
+        let mut child;
+        let mut dir;
+
+        loop {
+            match self.compare(&key, parent).unwrap_or(Ordering::Equal) {
+                Ordering::Less => {
+                    dir = BstDirection::Left;
+                    child = self.arena[parent][BstDirection::Left];
+                }
+                Ordering::Greater => {
+                    dir = BstDirection::Right;
+                    child = self.arena[parent][BstDirection::Right];
+                }
+                Ordering::Equal => {
+                    let mut old_value = value;
+                    swap(&mut self.arena[parent].value, &mut old_value);
+                    self.set_weight(NodeIndex(parent), weight);
+                    return Some(old_value);
+                }
+            }
+
+            if child == self.nil {
+                child = self.arena.insert(Node::new_leaf(key, value, weight));
+                self.link(parent, child, dir);
+
+                break;
+            }
+
+            parent = child;
+        }
+
+        loop {
+            self.update_weights(child);
+            child = self.skew_node(child);
+            child = self.split_node(child);
+            child = self.arena[child].parent;
+            if child == self.nil {
+                break;
+            }
+        }
+        None
     }
 
     fn next_from_subtree(&self, node: usize, dir: BstDirection) -> usize {
@@ -355,7 +475,7 @@ where
 
     fn apply(
         &self,
-        f: fn(&AaTree<K, V>, usize, BstDirection) -> usize,
+        f: fn(&WeightedAaTree<K, V, W>, usize, BstDirection) -> usize,
         node: usize,
         dir: BstDirection,
     ) -> Option<usize> {
@@ -370,71 +490,30 @@ where
     }
 }
 
-impl<K, V> BinarySearchTree<K, V> for AaTree<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> BinarySearchTree<K, V> for WeightedAaTree<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
-    /// Inserts a key-value pair into the `AaTree`. If the tree did not have this `key` present, `None`
-    /// is returned. If the tree **did** have this `key` present, the value is updated, and the old
-    /// value is returned. Note that in this situation, the key is left unchanged.
+    /// Inserts a key-value pair into the `WeightedAaTree` and assign the node the weight `W::default()`.
+    /// If the tree did not have this `key` present, `None` is returned. If the tree **did** have
+    /// this `key` present, the value and the weight are updated, and the old value is returned.
+    /// Note that in this situation, the key is left unchanged.
     ///
     /// ```
     /// use outils::prelude::*;
     ///
-    /// let mut aatree = AaTree::new(10);
+    /// let mut waatree = WeightedAaTree::new(10);
     ///
-    /// assert_eq!(aatree.insert("KEY-1", "VALUE-1"), None);
-    /// assert_eq!(aatree.insert("KEY-2", "VALUE-2"), None);
-    /// assert_eq!(aatree.insert("KEY-1", "VALUE-3"), Some("VALUE-1"));
-    /// assert_eq!(aatree.get(&"KEY-1"), Some(&"VALUE-3"));
-    /// assert_eq!(aatree.get(&"KEY-2"), Some(&"VALUE-2"));
+    /// assert_eq!(waatree.insert_weighted("KEY-1", "VALUE-1", 1), None);
+    /// assert_eq!(waatree.insert_weighted("KEY-2", "VALUE-2", 1), None);
+    /// assert_eq!(waatree.insert_weighted("KEY-1", "VALUE-3", 1), Some("VALUE-1"));
+    /// assert_eq!(waatree.get(&"KEY-1"), Some(&"VALUE-3"));
+    /// assert_eq!(waatree.get(&"KEY-2"), Some(&"VALUE-2"));
     /// ```
     fn insert(&mut self, key: K, value: V) -> Option<V> {
-        if self.root == self.nil {
-            self.root = self.arena.insert(Node::new_leaf(key, value));
-            return None;
-        }
-
-        let mut parent = self.root;
-        let mut child;
-        let mut dir;
-
-        loop {
-            match self.compare(&key, parent).unwrap_or(Ordering::Equal) {
-                Ordering::Less => {
-                    dir = BstDirection::Left;
-                    child = self.arena[parent][BstDirection::Left];
-                }
-                Ordering::Greater => {
-                    dir = BstDirection::Right;
-                    child = self.arena[parent][BstDirection::Right];
-                }
-                Ordering::Equal => {
-                    let mut old_value = value;
-                    swap(&mut self.arena[parent].value, &mut old_value);
-                    return Some(old_value);
-                }
-            }
-
-            if child == self.nil {
-                child = self.arena.insert(Node::new_leaf(key, value));
-                self.link(parent, child, dir);
-                break;
-            }
-
-            parent = child;
-        }
-
-        loop {
-            child = self.skew_node(child);
-            child = self.split_node(child);
-            child = self.arena[child].parent;
-            if child == self.nil {
-                break;
-            }
-        }
-        None
+        self.insert_weighted(key, value, W::default())
     }
 
     /// Removes a `key` from the tree if present, in this case returning the associated value.
@@ -442,10 +521,10 @@ where
     /// ```
     /// use outils::prelude::*;
     ///
-    /// let mut aatree = AaTree::new(10);
-    /// aatree.insert("KEY-1", "VALUE-1");
-    /// assert_eq!(aatree.remove(&"KEY-1"), Some("VALUE-1"));
-    /// assert_eq!(aatree.remove(&"KEY-2"), None);
+    /// let mut waatree = WeightedAaTree::new(10);
+    /// waatree.insert_weighted("KEY-1", "VALUE-1", 1);
+    /// assert_eq!(waatree.remove(&"KEY-1"), Some("VALUE-1"));
+    /// assert_eq!(waatree.remove(&"KEY-2"), None);
     /// ```
     fn remove(&mut self, key: &K) -> Option<V> {
         let node;
@@ -515,7 +594,9 @@ where
         }
 
         parent = self.arena[child].parent;
+
         loop {
+            self.update_weights(child);
             let child_level = self.arena[child].level;
             let left_level = self.arena[self.arena[child][BstDirection::Left]].level;
             let right_level = self.arena[self.arena[child][BstDirection::Right]].level;
@@ -574,10 +655,10 @@ where
     /// ```
     /// use outils::prelude::*;
     ///
-    /// let mut aatree = AaTree::new(10);
-    /// aatree.insert("KEY-1", "VALUE-1");
-    /// let index = aatree.index(&"KEY-1").expect("KEY-1 should be present");
-    /// assert_eq!(aatree.key(index), Some(&"KEY-1"));
+    /// let mut waatree = WeightedAaTree::new(10);
+    /// waatree.insert_weighted("KEY-1", "VALUE-1", 1);
+    /// let index = waatree.index(&"KEY-1").expect("KEY-1 should be present");
+    /// assert_eq!(waatree.key(index), Some(&"KEY-1"));
     /// ```
     fn key(&self, node: NodeIndex) -> Option<&K> {
         let node = node.index();
@@ -588,26 +669,27 @@ where
     }
 }
 
-impl<K, V> Traversable<V> for AaTree<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> Traversable<V> for WeightedAaTree<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
-    /// Returns the index of the root node of the `AaTree`. Since the tree can only have one root
+    /// Returns the index of the root node of the `WeightedAaTree`. Since the tree can only have one root
     /// the parameter `node` is not used.
     ///
     /// ```
     /// use outils::prelude::*;
     ///
-    /// let mut aatree = AaTree::new(10);
-    /// assert_eq!(aatree.root(NodeIndex(0)), None); // The parameter to root() doesn't matter!
-    /// aatree.insert("KEY-1", "VALUE-1");
+    /// let mut waatree = WeightedAaTree::new(10);
+    /// assert_eq!(waatree.root(NodeIndex(0)), None); // The parameter to root() doesn't matter!
+    /// waatree.insert_weighted("KEY-1", "VALUE-1", 1);
     ///
     /// // The solitary key in the tree must be the root
-    /// let index = aatree.index(&"KEY-1").expect("KEY-1 should be present");
+    /// let index = waatree.index(&"KEY-1").expect("KEY-1 should be present");
     ///
-    /// assert_eq!(aatree.root(index), Some(index));
-    /// assert_eq!(aatree.root(NodeIndex(0)), Some(index)); // The parameter to root() doesn't matter!
+    /// assert_eq!(waatree.root(index), Some(index));
+    /// assert_eq!(waatree.root(NodeIndex(0)), Some(index)); // The parameter to root() doesn't matter!
     /// ```
     fn root(&self, _node: NodeIndex) -> Option<NodeIndex> {
         if self.root == self.nil {
@@ -616,7 +698,7 @@ where
         Some(NodeIndex(self.root))
     }
 
-    /// Immutably access the value stored in the `AaTree` indexed by `node`.
+    /// Immutably access the value stored in the `WeightedAaTree` indexed by `node`.
     fn value(&self, node: NodeIndex) -> Option<&V> {
         let node = node.index();
         if node == self.nil {
@@ -625,7 +707,7 @@ where
         self.arena.get(node).map(|n| &n.value)
     }
 
-    /// Mutably access the value stored in the `AaTree` indexed by `node`.
+    /// Mutably access the value stored in the `WeightedAaTree` indexed by `node`.
     fn value_mut(&mut self, node: NodeIndex) -> Option<&mut V> {
         let node = node.index();
         if node == self.nil {
@@ -658,16 +740,16 @@ where
     /// ```
     /// use outils::prelude::*;
     ///
-    /// let mut aatree = AaTree::new(10);
-    /// aatree.insert(1, "1");
-    /// aatree.insert(2, "2");
+    /// let mut waatree = WeightedAaTree::new(10);
+    /// waatree.insert_weighted(1, "1", 1);
+    /// waatree.insert_weighted(2, "2", 1);
     ///
     /// // At this point, the AA algorithm has not had to rotate the tree, so that
     /// // the key `2` will be the right child of the key `1`:
     ///
-    /// let parent = aatree.index(&1).expect("Key '1' should be present");
-    /// assert_eq!(aatree.child(parent, 0), None);
-    /// assert_eq!(aatree.child(parent, 1), aatree.index(&2));
+    /// let parent = waatree.index(&1).expect("Key '1' should be present");
+    /// assert_eq!(waatree.child(parent, 0), None);
+    /// assert_eq!(waatree.child(parent, 1), waatree.index(&2));
     /// ```
     fn child(&self, node: NodeIndex, pos: usize) -> Option<NodeIndex> {
         let node = node.index();
@@ -694,23 +776,23 @@ where
     /// ```
     /// use outils::prelude::*;
     ///
-    /// let mut aatree = AaTree::new(10);
-    /// aatree.insert(1, "1");
-    /// aatree.insert(2, "2");
+    /// let mut waatree = WeightedAaTree::new(10);
+    /// waatree.insert_weighted(1, "1" ,1);
+    /// waatree.insert_weighted(2, "2", 1);
     ///
     /// // At this point, the AA algorithm has not had to rotate the tree, so that
     /// // the key `2` will be the right child of the key `1`:
     ///
-    /// let parent = aatree.index(&1).expect("Key '1' should be present");
-    /// let child = aatree.index(&2).expect("Key '2' should be present");
+    /// let parent = waatree.index(&1).expect("Key '1' should be present");
+    /// let child = waatree.index(&2).expect("Key '2' should be present");
     ///
-    /// assert_eq!(aatree.child_count(parent), 2);
-    /// assert_eq!(aatree.child_count(child), 2);
-    /// assert_eq!(aatree.child_count(NodeIndex(999)), 0); // Invalid index => no children
+    /// assert_eq!(waatree.child_count(parent), 2);
+    /// assert_eq!(waatree.child_count(child), 2);
+    /// assert_eq!(waatree.child_count(NodeIndex(999)), 0); // Invalid index => no children
     /// ```
     fn child_count(&self, node: NodeIndex) -> usize {
         let node = node.index();
-        if self.arena.contains(node) && node != self.nil {
+        if node != self.nil && self.arena.contains(node) {
             return 2;
         }
         0
@@ -722,31 +804,36 @@ where
     }
 }
 
-impl<K, V> OrderedTree for AaTree<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> OrderedTree for WeightedAaTree<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
     /// Returns the biggest node of the left subtree of the tree node indexed by `node`.
     ///
     /// ```
-    /// use outils::prelude::*;            // The resulting tree is shown below:
-    ///                                    //
-    /// let mut aatree = AaTree::new(10);  //       -- (3) --
-    ///                                    //      /         \
-    /// for i in 0..7 {                    //    (1)         (5)
-    ///     aatree.insert(i, i);           //   /   \       /   \
-    /// }                                  // (0)   (2)    (4)   (6)
+    /// use outils::prelude::*;                     // The resulting tree is shown below:
+    ///                                             //
+    /// let mut waatree = WeightedAaTree::new(10);  //       -- (3) --
+    ///                                             //      /         \
+    /// for i in 0..7 {                             //    (1)         (5)
+    ///     waatree.insert_weighted(i, i, 1);       //   /   \       /   \
+    /// }                                           // (0)   (2)    (4)   (6)
     ///
-    /// let n2 = aatree.index(&2).expect("Key '2' should be present");
-    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
-    /// let n4 = aatree.index(&4).expect("Key '4' should be present");
+    /// let n2 = waatree.index(&2).expect("Key '2' should be present");
+    /// let n3 = waatree.index(&3).expect("Key '3' should be present");
+    /// let n4 = waatree.index(&4).expect("Key '4' should be present");
     ///
-    /// assert_eq!(aatree.sub_predecessor(n3), Some(n2)); // 2 is biggest key in left subtree of 3.
-    /// assert_eq!(aatree.sub_predecessor(n4), None);     // 4 is a leaf and thus has no subtrees.'
+    /// assert_eq!(waatree.sub_predecessor(n3), Some(n2)); // 2 is biggest key in left subtree of 3.
+    /// assert_eq!(waatree.sub_predecessor(n4), None);     // 4 is a leaf and thus has no subtrees.'
     /// ```
     fn sub_predecessor(&self, node: NodeIndex) -> Option<NodeIndex> {
-        self.apply(AaTree::next_from_subtree, node.index(), BstDirection::Left)
+        self.apply(
+            WeightedAaTree::next_from_subtree,
+            node.index(),
+            BstDirection::Left,
+        )
             .map(NodeIndex)
     }
 
@@ -754,7 +841,11 @@ where
     ///
     /// Usage is analogous to [`sub_predecessor`](#method.sub_predecessor)
     fn sub_successor(&self, node: NodeIndex) -> Option<NodeIndex> {
-        self.apply(AaTree::next_from_subtree, node.index(), BstDirection::Right)
+        self.apply(
+            WeightedAaTree::next_from_subtree,
+            node.index(),
+            BstDirection::Right,
+        )
             .map(NodeIndex)
     }
 
@@ -762,25 +853,25 @@ where
     /// indexed by `node`.
     ///
     /// ```
-    /// use outils::prelude::*;            // The resulting tree is shown below:
-    ///                                    //
-    /// let mut aatree = AaTree::new(10);  //       -- (3) --
-    ///                                    //      /         \
-    /// for i in 0..7 {                    //    (1)         (5)
-    ///     aatree.insert(i, i);           //   /   \       /   \
-    /// }                                  // (0)   (2)    (4)   (6)
+    /// use outils::prelude::*;                     // The resulting tree is shown below:
+    ///                                             //
+    /// let mut waatree = WeightedAaTree::new(10);  //       -- (3) --
+    ///                                             //      /         \
+    /// for i in 0..7 {                             //    (1)         (5)
+    ///     waatree.insert_weighted(i, i, 1);       //   /   \       /   \
+    /// }                                           // (0)   (2)    (4)   (6)
     ///
-    /// let n0 = aatree.index(&0).expect("Key '0' should be present");
-    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
-    /// let n4 = aatree.index(&4).expect("Key '4' should be present");
+    /// let n0 = waatree.index(&0).expect("Key '0' should be present");
+    /// let n3 = waatree.index(&3).expect("Key '3' should be present");
+    /// let n4 = waatree.index(&4).expect("Key '4' should be present");
     ///
-    /// assert_eq!(aatree.predecessor(n4), Some(n3)); // 3 is the biggest key of the whole tree
+    /// assert_eq!(waatree.predecessor(n4), Some(n3)); // 3 is the biggest key of the whole tree
     ///                                               // smaller than 4.
-    /// assert_eq!(aatree.predecessor(n0), None);     // 0 is globally the smallest key of the
+    /// assert_eq!(waatree.predecessor(n0), None);     // 0 is globally the smallest key of the
     ///                                               // whole tree and thus has no predecessor.
     /// ```
     fn predecessor(&self, node: NodeIndex) -> Option<NodeIndex> {
-        self.apply(AaTree::next, node.index(), BstDirection::Left)
+        self.apply(WeightedAaTree::next, node.index(), BstDirection::Left)
             .map(NodeIndex)
     }
 
@@ -789,30 +880,30 @@ where
     ///
     /// Usage is analogous to [`predecessor`](#method.predecessor)
     fn successor(&self, node: NodeIndex) -> Option<NodeIndex> {
-        self.apply(AaTree::next, node.index(), BstDirection::Right)
+        self.apply(WeightedAaTree::next, node.index(), BstDirection::Right)
             .map(NodeIndex)
     }
 
     /// Returns the smallest node of the left subtree of the tree node indexed by `node`.
     ///
     /// ```
-    /// use outils::prelude::*;            // The resulting tree is shown below:
-    ///                                    //
-    /// let mut aatree = AaTree::new(10);  //       -- (3) --
-    ///                                    //      /         \
-    /// for i in 0..7 {                    //    (1)         (5)
-    ///     aatree.insert(i, i);           //   /   \       /   \
-    /// }                                  // (0)   (2)    (4)   (6)
+    /// use outils::prelude::*;                     // The resulting tree is shown below:
+    ///                                             //
+    /// let mut waatree = WeightedAaTree::new(10);  //       -- (3) --
+    ///                                             //      /         \
+    /// for i in 0..7 {                             //    (1)         (5)
+    ///     waatree.insert_weighted(i, i, 1);       //   /   \       /   \
+    /// }                                           // (0)   (2)    (4)   (6)
     ///
-    /// let n0 = aatree.index(&0).expect("Key '0' should be present");
-    /// let n1 = aatree.index(&1).expect("Key '1' should be present");
-    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
+    /// let n0 = waatree.index(&0).expect("Key '0' should be present");
+    /// let n1 = waatree.index(&1).expect("Key '1' should be present");
+    /// let n3 = waatree.index(&3).expect("Key '3' should be present");
     ///
-    /// assert_eq!(aatree.first(n3), Some(n0));  // 0 is the smallest key of the left subtree of 3
-    /// assert_eq!(aatree.first(n1), Some(n0));  // 0 is the smallest key of the left subtree of 1
+    /// assert_eq!(waatree.first(n3), Some(n0));  // 0 is the smallest key of the left subtree of 3
+    /// assert_eq!(waatree.first(n1), Some(n0));  // 0 is the smallest key of the left subtree of 1
     /// ```
     fn first(&self, node: NodeIndex) -> Option<NodeIndex> {
-        self.apply(AaTree::extreme, node.index(), BstDirection::Left)
+        self.apply(WeightedAaTree::extreme, node.index(), BstDirection::Left)
             .map(NodeIndex)
     }
 
@@ -820,7 +911,7 @@ where
     ///
     /// Usage is analogous to [`first`](#method.first)
     fn last(&self, node: NodeIndex) -> Option<NodeIndex> {
-        self.apply(AaTree::extreme, node.index(), BstDirection::Right)
+        self.apply(WeightedAaTree::extreme, node.index(), BstDirection::Right)
             .map(NodeIndex)
     }
 
@@ -834,20 +925,20 @@ where
     /// panic because the number of tree nodes needs to be close to 2^64 for the above condition to occur.
     ///
     /// ```
-    /// use outils::prelude::*;            // The resulting tree is shown below:
-    ///                                    //
-    /// let mut aatree = AaTree::new(10);  //       -- (3) --
-    ///                                    //      /         \
-    /// for i in 0..7 {                    //    (1)         (5)
-    ///     aatree.insert(i, i);           //   /   \       /   \
-    /// }                                  // (0)   (2)    (4)   (6)
+    /// use outils::prelude::*;                     // The resulting tree is shown below:
+    ///                                             //
+    /// let mut waatree = WeightedAaTree::new(10);  //       -- (3) --
+    ///                                             //      /         \
+    /// for i in 0..7 {                             //    (1)         (5)
+    ///     waatree.insert_weighted(i, i, 1);       //   /   \       /   \
+    /// }                                           // (0)   (2)    (4)   (6)
     ///
-    /// let n0 = aatree.index(&0).expect("Key '0' should be present");
-    /// let n1 = aatree.index(&1).expect("Key '1' should be present");
-    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
+    /// let n0 = waatree.index(&0).expect("Key '0' should be present");
+    /// let n1 = waatree.index(&1).expect("Key '1' should be present");
+    /// let n3 = waatree.index(&3).expect("Key '3' should be present");
     ///
-    /// assert!(aatree.is_smaller(n0, n3));
-    /// assert!(!aatree.is_smaller(n3, n1));
+    /// assert!(waatree.is_smaller(n0, n3));
+    /// assert!(!waatree.is_smaller(n3, n1));
     /// ```
     fn is_smaller(&self, node_u: NodeIndex, node_v: NodeIndex) -> bool {
         let node_u = node_u.index();
@@ -856,17 +947,131 @@ where
             || !self.arena.contains(node_u)
             || node_v == self.nil
             || !self.arena.contains(node_v)
-            {
+        {
             return false;
         }
         self.arena[node_u].key < self.arena[node_v].key
     }
 }
 
-impl<'slf, K, V> Keys<'slf, K> for AaTree<K, V>
-where
-    K: 'slf + KeyType,
-    V: ValueType,
+impl<K, V, W> WeightedTree<W> for WeightedAaTree<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
+{
+    /// Set the weight of the tree node indexed by `node` to `weight` and update the subweight
+    /// of this node as well as the subweights of the nodes on the path from this node to the tree
+    /// root. If `node` was a valid index, the old weight is returned.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut waatree = WeightedAaTree::new(10);
+    /// waatree.insert_weighted(1, 1, 1);
+    /// let n1 = waatree.index(&1).expect("Key 1 should be present");
+    /// let w = waatree.set_weight(n1, 2).expect("Previous weight should not be None");
+    /// assert_eq!(w, 1);
+    /// assert_eq!(waatree.weight(n1), Some(&2));
+    /// ```
+    fn set_weight(&mut self, node: NodeIndex, weight: W) -> Option<W> {
+        let node = node.index();
+        if node == self.nil || !self.arena.contains(node) {
+            return None;
+        }
+        let old_weight = self.arena[node].weight;
+        self.arena[node].weight = weight;
+        let mut parent = node;
+
+        loop {
+            if parent == self.nil {
+                break;
+            }
+            self.update_weights(parent);
+            parent = self.arena[parent].parent;
+        }
+        Some(old_weight)
+    }
+
+    /// Immutably access the weight of the tree node indexed by `node`.
+    fn weight(&self, node: NodeIndex) -> Option<&W> {
+        if node.index() > self.nil {
+            self.arena.get(node.index()).map(|n| &n.weight)
+        } else {
+            None
+        }
+    }
+
+    /// Immutably access the subweight of the tree node indexed by `node`.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut waatree = WeightedAaTree::new(10);
+    /// waatree.insert_weighted(1, 1, 1);
+    /// waatree.insert_weighted(2, 2, 1);
+    ///
+    /// let n1 = waatree.index(&1).expect("Key 1 should be present");
+    /// let n2 = waatree.index(&2).expect("Key 2 should be present");
+    ///
+    /// // At this point, the AA algorithm has not had to rotate the tree, so that
+    /// // n2 will be the right child of n1:
+    ///
+    /// assert_eq!(waatree.subweight(n1), Some(&2));
+    /// ```
+    fn subweight(&self, node: NodeIndex) -> Option<&W> {
+        if node.index() > self.nil {
+            self.arena.get(node.index()).map(|n| &n.subweight)
+        } else {
+            None
+        }
+    }
+
+    /// Change the weight of the tree node indexed by `node` by applying the closure `f`. After
+    /// applying the closure, the subweight of this node as well as the subweights of the nodes on
+    /// the path from this node to the tree root will be updated accordingly. If `node` was a valid
+    /// index a reference to the changed weight is returned.
+    ///
+    /// ```
+    /// use outils::prelude::*;
+    ///
+    /// let mut waatree = WeightedAaTree::new(10);
+    /// waatree.insert_weighted(1, 1, 1);
+    /// waatree.insert_weighted(2, 2, 1);
+    ///
+    /// let n1 = waatree.index(&1).expect("Key 1 should be present");
+    /// let n2 = waatree.index(&2).expect("Key 2 should be present");
+    ///
+    /// // At this point, the AA algorithm has not had to rotate the tree, so that
+    /// // n2 will be the right child of n1. Now the weight if n2 will be increased by 1.
+    ///
+    /// waatree.adjust_weight(n2, &|w: &mut usize| *w += 1);
+    /// assert_eq!(waatree.weight(n2), Some(&2));
+    /// assert_eq!(waatree.subweight(n1), Some(&3));
+    /// ```
+    fn adjust_weight(&mut self, node: NodeIndex, f: &dyn Fn(&mut W)) -> Option<&W> {
+        let node = node.index();
+        if node == self.nil || !self.arena.contains(node) {
+            return None;
+        }
+        f(&mut self.arena[node].weight);
+        let mut parent = node;
+        loop {
+            if parent == self.nil {
+                break;
+            }
+            self.update_weights(parent);
+            parent = self.arena[parent].parent;
+        }
+        Some(&self.arena[node].weight)
+    }
+}
+
+impl<'slf, K, V, W> Keys<'slf, K> for WeightedAaTree<K, V, W>
+    where
+        K: 'slf + KeyType,
+        V: ValueType,
+        W: WeightType,
 {
     /// Returns a boxed iterator over the search keys and their corresponding
     /// tree node indices held by `self`. The keys are returned in the order
@@ -882,13 +1087,14 @@ where
     }
 }
 
-impl<'slf, K, V> Values<'slf, V> for AaTree<K, V>
-where
-    K: KeyType,
-    V: 'slf + ValueType,
+impl<'slf, K, V, W> Values<'slf, V> for WeightedAaTree<K, V, W>
+    where
+        K: KeyType,
+        V: 'slf + ValueType,
+        W: WeightType,
 {
     /// Returns a boxed iterator over the stored values and their corresponding
-    /// tree node indices held by `self`. The keys are returned in the order
+    /// tree node indices held by `self`. The values are returned in the order
     /// of the corresponding search keys.
     fn values(&'slf self) -> Box<dyn Iterator<Item=(NodeIndex, &'slf V)> + 'slf> {
         if self.root == self.nil {
@@ -898,10 +1104,11 @@ where
     }
 }
 
-impl<K, V> Index<NodeIndex> for AaTree<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> Index<NodeIndex> for WeightedAaTree<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
     type Output = V;
     fn index(&self, index: NodeIndex) -> &V {
@@ -909,20 +1116,22 @@ where
     }
 }
 
-impl<K, V> IndexMut<NodeIndex> for AaTree<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> IndexMut<NodeIndex> for WeightedAaTree<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
     fn index_mut(&mut self, index: NodeIndex) -> &mut V {
         &mut self.arena[index.index()].value
     }
 }
 
-impl<K, V> Tgf for AaTree<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+impl<K, V, W> Tgf for WeightedAaTree<K, V, W>
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
     fn to_tgf(&self) -> String {
         let mut nodes = String::from("");
@@ -936,6 +1145,10 @@ where
             nodes.push_str(format!("{:?}", node.value).as_str());
             nodes.push_str(", L = ");
             nodes.push_str(format!("{}", node.level).as_str());
+            nodes.push_str(", W = ");
+            nodes.push_str(format!("{:?}", node.weight).as_str());
+            nodes.push_str(", S = ");
+            nodes.push_str(format!("{:?}", node.subweight).as_str());
             nodes.push_str("]\n");
 
             if node[BstDirection::Left] != self.nil {

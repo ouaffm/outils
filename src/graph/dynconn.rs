@@ -15,8 +15,8 @@ pub mod hdt;
 ///
 /// [1]: https://en.wikipedia.org/wiki/Dynamic_connectivity
 pub trait DynamicConnectivity<W = EmptyWeight, Ix = DefaultIndexType>
-where
-    Ix: IndexType,
+    where
+        Ix: IndexType,
 {
     /// Connects the vertices indexed by `v` and `w` and returns index of the created edge.
     /// If the vertices cannot be connected - the reasons for this dependant on the implementation
@@ -34,8 +34,8 @@ where
 /// This trait defines the fundamental operations of a _dynamic graph_, that can be applied to
 /// a connected sub-graph, that is, the connected components of the graph.
 pub trait DynamicComponent<'a, Ix = DefaultIndexType>
-where
-    Ix: IndexType,
+    where
+        Ix: IndexType,
 {
     /// Returns a boxed iterator over the indices of the vertices which are connected to the
     /// vertex indexed by `v`.
@@ -60,9 +60,9 @@ where
 /// This trait defines the fundamental operations of a _dynamic graph_ related to vertex weights,
 /// that can be applied to a connected sub-graph, that is, the connected components of the graph.
 pub trait DynamicWeightedComponent<W = EmptyWeight, Ix = DefaultIndexType>
-where
-    W: WeightType,
-    Ix: IndexType,
+    where
+        W: WeightType,
+        Ix: IndexType,
 {
     /// Set the weight of the vertex indexed by `v` to `weight` and update the weight of the
     /// component this vertex belongs to. If `v` was a valid index, the old weight is returned.

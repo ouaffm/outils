@@ -133,7 +133,7 @@ impl NodeContext {
 
 struct ChildIterator<'slf, V>
     where
-        V: 'slf + ValueType,
+        V: ValueType,
 {
     forest: &'slf Forest<V>,
     current: Option<NodeIndex>,

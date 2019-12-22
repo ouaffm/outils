@@ -63,9 +63,6 @@
 
 #![warn(missing_docs)]
 
-extern crate core;
-extern crate rand;
-extern crate slab;
 
 pub mod graph;
 pub mod prelude;

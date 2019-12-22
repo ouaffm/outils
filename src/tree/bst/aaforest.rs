@@ -22,8 +22,8 @@ struct Node<V>
 }
 
 impl<V> Node<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     fn new() -> Self {
         Node {
@@ -45,8 +45,8 @@ where
 }
 
 impl<V> Index<BstDirection> for Node<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     type Output = usize;
     fn index(&self, index: BstDirection) -> &usize {
@@ -55,8 +55,8 @@ where
 }
 
 impl<V> IndexMut<BstDirection> for Node<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     fn index_mut(&mut self, index: BstDirection) -> &mut usize {
         &mut self.children[index as usize]
@@ -64,8 +64,8 @@ where
 }
 
 impl<V> Index<usize> for Node<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     type Output = usize;
     fn index(&self, index: usize) -> &usize {
@@ -74,8 +74,8 @@ where
 }
 
 impl<V> IndexMut<usize> for Node<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     fn index_mut(&mut self, index: usize) -> &mut usize {
         &mut self.children[index as usize]
@@ -121,8 +121,8 @@ where
 ///
 #[derive(Clone, Debug)]
 pub struct AaForest<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     arena: slab::Slab<Node<V>>,
     nil: usize,
@@ -131,8 +131,8 @@ where
 }
 
 impl<V> AaForest<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     /// Construct a new empty `AaForest` with an initial capacity of `size`.
     pub fn new(size: usize) -> Self {
@@ -508,8 +508,8 @@ where
 }
 
 impl<V> Traversable<V> for AaForest<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     /// Returns the index of the root node of the tree containing the tree node indexed by `node`.
     /// In case of an invalid index, `None` is returned.
@@ -635,8 +635,8 @@ where
 }
 
 impl<V> OrderedTree for AaForest<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     /// Returns the biggest node of the left subtree of the tree node indexed by `node`.
     ///
@@ -807,8 +807,8 @@ where
 }
 
 impl<V> BalancedBinaryForest<V> for AaForest<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     // Insert a new singleton node containing `value` into the forest.
     fn insert(&mut self, value: V) -> NodeIndex {
@@ -1143,8 +1143,8 @@ impl<'slf, V> Values<'slf, V> for AaForest<V>
 }
 
 impl<V> Index<NodeIndex> for AaForest<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     type Output = V;
     fn index(&self, index: NodeIndex) -> &V {
@@ -1153,8 +1153,8 @@ where
 }
 
 impl<V> IndexMut<NodeIndex> for AaForest<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     fn index_mut(&mut self, index: NodeIndex) -> &mut V {
         &mut self.arena[index.index()].value
@@ -1162,8 +1162,8 @@ where
 }
 
 impl<V> Tgf for AaForest<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     fn to_tgf(&self) -> String {
         let mut nodes = String::from("");
