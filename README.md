@@ -58,6 +58,8 @@ payload, a node weight can be stored and tree subweights are maintained.
 children of a node as a linked list headed by the first child of the parent node.
 
 ## Recent changes
+- 0.2.0
+  - Upgrade to Rust Edition 2018
 - 0.1.3
   - Removed required implementation for Hash for types except `KeyType`
 - 0.1.2
