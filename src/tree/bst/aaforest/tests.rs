@@ -1,9 +1,9 @@
 // use super::AaForest;
-use prelude::*;
+use crate::prelude::*;
 use rand;
 use rand::Rng;
 use std::cmp::Ordering;
-use types::Tgf;
+use crate::types::Tgf;
 
 #[test]
 fn test_api() {
@@ -141,7 +141,6 @@ fn test_bulk_append() {
 
 #[test]
 fn test_basic_split() {
-    println!("test_basic_split()");
     let mut tree: AaForest<i64> = AaForest::new(8);
     let n0 = tree.insert(0);
     let n1 = tree.insert(1);

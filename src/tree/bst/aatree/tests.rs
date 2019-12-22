@@ -1,10 +1,10 @@
 // use super::AaTree;
 // use super::BinarySearchTree;
-use prelude::*;
+use crate::prelude::*;
 use rand;
 use rand::Rng;
 use std::cmp::Ordering;
-use types::Tgf;
+use crate::types::Tgf;
 
 #[test]
 fn test_api() {

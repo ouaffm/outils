@@ -4,8 +4,8 @@
 pub use self::error::TreeError;
 use slab;
 use std::ops::{Index, IndexMut};
-use tree::traversal::Traversable;
-use types::{Children, DefaultIndexType, IndexType, NodeIndex, Tgf, Values, ValueType};
+use crate::tree::traversal::Traversable;
+use crate::types::{Children, DefaultIndexType, IndexType, NodeIndex, Tgf, Values, ValueType};
 
 #[cfg(test)]
 mod tests;

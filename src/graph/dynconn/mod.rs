@@ -1,7 +1,7 @@
 //!
 //! Graph data structures and algorithms providing dynamic connectivity
 //!
-use types::{DefaultIndexType, Edge, EmptyWeight, IndexType, VertexIndex, WeightType};
+use crate::types::{DefaultIndexType, Edge, EmptyWeight, IndexType, VertexIndex, WeightType};
 
 pub mod hdt;
 

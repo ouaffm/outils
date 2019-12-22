@@ -3,9 +3,9 @@ use super::{
     BinaryInOrderIndices, BinaryPostOrderIndices, BinaryPreOrderIndices, GeneralBfsIndices,
     GeneralDfsIndices, Traversable,
 };
-use tree::bst::aaforest::AaForest;
-use tree::bst::BalancedBinaryForest;
-use types::{NodeIndex, Tgf, ValueType};
+use crate::tree::bst::aaforest::AaForest;
+use crate::tree::bst::BalancedBinaryForest;
+use crate::types::{NodeIndex, Tgf, ValueType};
 
 #[derive(Clone, Debug)]
 struct Node<V>
@@ -126,9 +126,6 @@ fn test_generic_dfs() {
         v
     });
 
-    println!("{:?}", v);
-    println!("{:?}", seq);
-
     assert!(v.len() == seq.len());
 
     for i in 0..v.len() {
@@ -145,8 +142,6 @@ fn test_generic_bfs() {
         v.push(i);
         v
     });
-
-    println!("{:?}", seq);
 
     for i in 0..seq.len() {
         if i != 0 {
@@ -167,8 +162,6 @@ fn test_generic_complete_binary_inorder() {
         v
     });
 
-    println!("{:?}", v);
-    println!("{:?}", seq);
     assert!(v.len() == seq.len());
 
     for i in 0..v.len() {
@@ -187,9 +180,6 @@ fn test_generic_incomplete_binary_inorder() {
         v.push(i);
         v
     });
-
-    println!("{:?}", v);
-    println!("{:?}", seq);
 
     assert!(v.len() == seq.len());
 
@@ -210,9 +200,6 @@ fn test_generic_complete_binary_preorder() {
         v
     });
 
-    println!("{:?}", v);
-    println!("{:?}", seq);
-
     assert!(v.len() == seq.len());
 
     for i in 0..v.len() {
@@ -231,9 +218,6 @@ fn test_generic_incomplete_binary_preorder() {
         v.push(i);
         v
     });
-
-    println!("{:?}", v);
-    println!("{:?}", seq);
 
     assert!(v.len() == seq.len());
 
@@ -254,9 +238,6 @@ fn test_generic_complete_binary_postorder() {
         v
     });
 
-    println!("{:?}", v);
-    println!("{:?}", seq);
-
     assert!(v.len() == seq.len());
 
     for i in 0..v.len() {
@@ -275,9 +256,6 @@ fn test_generic_incomplete_binary_postorder() {
         v.push(i);
         v
     });
-
-    println!("{:?}", v);
-    println!("{:?}", seq);
 
     assert!(v.len() == seq.len());
 
@@ -298,16 +276,11 @@ fn test_binary_inorder() {
         NodeIndex(8),
     ];
 
-    println!("{}", tree.to_tgf());
-
     let t = BinaryInOrderIndices::new(&tree, NodeIndex(3));
     let seq = t.fold(Vec::new(), |mut v, i| {
         v.push(i);
         v
     });
-
-    println!("{:?}", v);
-    println!("{:?}", seq);
 
     assert!(v.len() == seq.len());
 
@@ -334,9 +307,6 @@ fn test_binary_preorder() {
         v
     });
 
-    println!("{:?}", v);
-    println!("{:?}", seq);
-
     assert!(v.len() == seq.len());
 
     for i in 0..v.len() {
@@ -361,9 +331,6 @@ fn test_binary_postorder() {
         v.push(i);
         v
     });
-
-    println!("{:?}", v);
-    println!("{:?}", seq);
 
     assert!(v.len() == seq.len());
 

@@ -1,5 +1,5 @@
 //! Binary tree data structures and algorithms
-use types::{DefaultIndexType, IndexType, KeyType, NodeIndex, ValueType};
+use crate::types::{DefaultIndexType, IndexType, KeyType, NodeIndex, ValueType};
 
 pub mod aaforest;
 pub mod aatree;

@@ -1,7 +1,7 @@
-use prelude::*;
+use crate::prelude::*;
 use rand;
 use rand::Rng;
-use tree::traversal::GeneralDfsValues;
+use crate::tree::traversal::GeneralDfsValues;
 
 #[test]
 fn test_basic_tree() {

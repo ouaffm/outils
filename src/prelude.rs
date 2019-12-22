@@ -4,27 +4,27 @@
 //! use outils::prelude::*;
 //! ```
 #[doc(no_inline)]
-pub use graph::dynconn::{DynamicComponent, DynamicConnectivity, DynamicWeightedComponent};
+pub use crate::graph::dynconn::{DynamicComponent, DynamicConnectivity, DynamicWeightedComponent};
 #[doc(no_inline)]
-pub use graph::dynconn::hdt::DynamicGraph;
+pub use crate::graph::dynconn::hdt::DynamicGraph;
 #[doc(no_inline)]
-pub use tree::bst::{BalancedBinaryForest, BinarySearchTree, BstDirection, OrderedTree};
+pub use crate::tree::bst::{BalancedBinaryForest, BinarySearchTree, BstDirection, OrderedTree};
 #[doc(no_inline)]
-pub use tree::bst::aaforest::AaForest;
+pub use crate::tree::bst::aaforest::AaForest;
 #[doc(no_inline)]
-pub use tree::bst::aatree::AaTree;
+pub use crate::tree::bst::aatree::AaTree;
 #[doc(no_inline)]
-pub use tree::bst::waaforest::WeightedAaForest;
+pub use crate::tree::bst::waaforest::WeightedAaForest;
 #[doc(no_inline)]
-pub use tree::bst::waatree::WeightedAaTree;
+pub use crate::tree::bst::waatree::WeightedAaTree;
 #[doc(no_inline)]
-pub use tree::generic::{Forest, GenericForest};
+pub use crate::tree::generic::{Forest, GenericForest};
 #[doc(no_inline)]
-pub use tree::traversal::Traversable;
+pub use crate::tree::traversal::Traversable;
 #[doc(no_inline)]
-pub use tree::WeightedTree;
+pub use crate::tree::WeightedTree;
 #[doc(no_inline)]
-pub use types::{
+pub use crate::types::{
     Children, Edge, EdgeIndex, Edges, EmptyWeight, IndexType, Keys, KeyType, NodeIndex, Values,
     ValueType, VertexIndex, WeightType,
 };

@@ -1,5 +1,5 @@
 //! Tree data structures and algorithms
-use types::{DefaultIndexType, IndexType, NodeIndex, WeightType};
+use crate::types::{DefaultIndexType, IndexType, NodeIndex, WeightType};
 
 pub mod bst;
 pub mod generic;

@@ -353,38 +353,38 @@ fn waaforest_big_random_append_bitboard_weight(bench: &mut Bencher) {
 }
 
 fn dynconn_big_insert_delete(bench: &mut Bencher) {
-    let mut dyn: DynamicGraph<EmptyWeight> = DynamicGraph::new(100, 100);
+    let mut dg: DynamicGraph<EmptyWeight> = DynamicGraph::new(100, 100);
     let mut edges = Vec::with_capacity(10_000);
 
     bench.iter(|| {
         for i in 0..100 {
             for j in 0..100 {
-                dyn.insert_edge(VertexIndex(i), VertexIndex(j))
+                dg.insert_edge(VertexIndex(i), VertexIndex(j))
                     .map(|e| edges.push(e));
             }
         }
         while let Some(e) = edges.pop() {
-            dyn.delete_edge(e);
+            dg.delete_edge(e);
         }
     })
 }
 
 fn dynconn_big_insert_delete_ext_weight(bench: &mut Bencher) {
-    let mut dyn: DynamicGraph<BitboardWeight> = DynamicGraph::new(100, 100);
+    let mut dg: DynamicGraph<BitboardWeight> = DynamicGraph::new(100, 100);
     for i in 0..100 {
-        dyn.set_vertex_weight(VertexIndex(i), BITBOARD_WEIGHTS[i]);
+        dg.set_vertex_weight(VertexIndex(i), BITBOARD_WEIGHTS[i]);
     }
     let mut edges = Vec::with_capacity(10_000);
 
     bench.iter(|| {
         for i in 0..100 {
             for j in 0..100 {
-                dyn.insert_edge(VertexIndex(i), VertexIndex(j))
+                dg.insert_edge(VertexIndex(i), VertexIndex(j))
                     .map(|e| edges.push(e));
             }
         }
         while let Some(e) = edges.pop() {
-            dyn.delete_edge(e);
+            dg.delete_edge(e);
         }
     })
 }

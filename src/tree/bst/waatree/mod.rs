@@ -6,20 +6,20 @@ use std::cmp::Ordering;
 use std::iter::empty;
 use std::mem::swap;
 use std::ops::{Index, IndexMut};
-use tree::bst::{BinarySearchTree, BstDirection, OrderedTree};
-use tree::traversal::{BinaryInOrder, BinaryInOrderIndices, Traversable};
-use tree::WeightedTree;
-use types::{DefaultWeightType, Keys, KeyType, NodeIndex, Tgf, Values, ValueType, WeightType};
+use crate::tree::bst::{BinarySearchTree, BstDirection, OrderedTree};
+use crate::tree::traversal::{BinaryInOrder, BinaryInOrderIndices, Traversable};
+use crate::tree::WeightedTree;
+use crate::types::{DefaultWeightType, Keys, KeyType, NodeIndex, Tgf, Values, ValueType, WeightType};
 
 #[cfg(test)]
 mod tests;
 
 #[derive(Clone, Debug)]
 struct Node<K, V, W>
-where
-    K: KeyType,
-    V: ValueType,
-    W: WeightType,
+    where
+        K: KeyType,
+        V: ValueType,
+        W: WeightType,
 {
     key: K,
     value: V,

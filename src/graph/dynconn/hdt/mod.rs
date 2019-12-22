@@ -2,17 +2,17 @@
 //! `DynamicGraph<W>` is graph data structure providing fully-dynamic connectivity with support
 //! for vertex and component weights.
 //!
-use graph::dynconn::{DynamicComponent, DynamicConnectivity, DynamicWeightedComponent};
+use crate::graph::dynconn::{DynamicComponent, DynamicConnectivity, DynamicWeightedComponent};
 use slab::Slab;
 use std::marker::PhantomData;
 use std::mem::{size_of, swap};
 use std::ops::{Add, AddAssign};
 use std::ops::{Index, IndexMut};
-use tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
-use tree::bst::waaforest::WeightedAaForest;
-use tree::traversal::Traversable;
-use tree::WeightedTree;
-use types::{Edge, EdgeIndex, Edges, EmptyWeight, NodeIndex, Values, VertexIndex, WeightType};
+use crate::tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
+use crate::tree::bst::waaforest::WeightedAaForest;
+use crate::tree::traversal::Traversable;
+use crate::tree::WeightedTree;
+use crate::types::{Edge, EdgeIndex, Edges, EmptyWeight, NodeIndex, Values, VertexIndex, WeightType};
 
 #[cfg(test)]
 mod tests;
@@ -908,9 +908,9 @@ where
     }
 }
 
-impl<'dyn, W> DynamicComponent<'dyn> for DynamicGraph<W>
-where
-    W: WeightType,
+impl<'dc, W> DynamicComponent<'dc> for DynamicGraph<W>
+    where
+        W: WeightType,
 {
     /// Returns a boxed iterator over the indices of the vertices which are connected to the
     /// vertex indexed by `v`.
@@ -937,7 +937,7 @@ where
     /// assert!(vertices.contains(&c));
     /// assert!(!vertices.contains(&d)); // d is not part of the component b belongs to!
     /// ```
-    fn component_vertices(&'dyn self, v: VertexIndex) -> Box<Iterator<Item = VertexIndex> + 'dyn> {
+    fn component_vertices(&'dc self, v: VertexIndex) -> Box<Iterator<Item=VertexIndex> + 'dc> {
         Box::new(Vertices::new(
             &self.euler[0],
             self.euler[0].vertices[v].active_node,
@@ -974,7 +974,7 @@ where
     /// assert!(vertices.contains(&e) || vertices.contains(&f));
     /// assert!(vertices.contains(&g));
     /// ```
-    fn components(&'dyn self) -> Box<Iterator<Item=VertexIndex> + 'dyn> {
+    fn components(&'dc self) -> Box<Iterator<Item=VertexIndex> + 'dc> {
         Box::new(
             self.euler[0]
                 .forest
@@ -1024,7 +1024,7 @@ where
     /// assert!(efg_edges.contains(&gf));
     /// assert!(efg_edges.contains(&eg));
     /// ```
-    fn component_edges(&'dyn self, v: VertexIndex) -> Box<Iterator<Item=Edge> + 'dyn> {
+    fn component_edges(&'dc self, v: VertexIndex) -> Box<Iterator<Item=Edge> + 'dc> {
         Box::new(
             Vertices::new(&self.euler[0], self.euler[0].vertices[v].active_node).flat_map(
                 move |v| {
@@ -1282,19 +1282,19 @@ where
     }
 }
 
-struct Vertices<'dyn, W>
-where
-    W: 'dyn + WeightType,
+struct Vertices<'dc, W>
+    where
+        W: 'dc + WeightType,
 {
-    euler: &'dyn EulerForest<W>,
+    euler: &'dc EulerForest<W>,
     state: VerticesState<W>,
 }
 
-impl<'dyn, W> Vertices<'dyn, W>
-where
-    W: 'dyn + WeightType,
+impl<'dc, W> Vertices<'dc, W>
+    where
+        W: 'dc + WeightType,
 {
-    fn new(euler: &'dyn EulerForest<W>, node: NodeIndex) -> Self {
+    fn new(euler: &'dc EulerForest<W>, node: NodeIndex) -> Self {
         Vertices {
             euler,
             state: VerticesState::new(euler, node),
@@ -1302,9 +1302,9 @@ where
     }
 }
 
-impl<'dyn, W> Iterator for Vertices<'dyn, W>
-where
-    W: 'dyn + WeightType,
+impl<'dc, W> Iterator for Vertices<'dc, W>
+    where
+        W: 'dc + WeightType,
 {
     type Item = VertexIndex;
     fn next(&mut self) -> Option<VertexIndex> {

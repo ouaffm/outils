@@ -3,17 +3,17 @@
 //!
 use slab;
 use std::ops::{Index, IndexMut};
-use tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
-use tree::traversal::{BinaryPreOrderIndices, Traversable};
-use types::{NodeIndex, Tgf, Values, ValueType};
+use crate::tree::bst::{BalancedBinaryForest, BstDirection, OrderedTree};
+use crate::tree::traversal::{BinaryPreOrderIndices, Traversable};
+use crate::types::{NodeIndex, Tgf, Values, ValueType};
 
 #[cfg(test)]
 mod tests;
 
 #[derive(Debug, Clone)]
 struct Node<V>
-where
-    V: ValueType,
+    where
+        V: ValueType,
 {
     value: V,
     level: usize,
@@ -334,7 +334,7 @@ where
             if parent == self.nil {
                 break;
             }
-            path |= (dir as u64) << i;
+            path |= (dir as u64) << (i as u64);
             child = parent;
             parent = self.arena[child].parent;
             dir = if self.arena[parent][BstDirection::Left] == child {

@@ -10,7 +10,7 @@
 //! - [Breadth-First Search](https://en.wikipedia.org/wiki/Tree_traversal#Breadth-first_search)
 //!
 use std::collections::VecDeque;
-use types::{DefaultIndexType, IndexType, NodeIndex, ValueType};
+use crate::types::{DefaultIndexType, IndexType, NodeIndex, ValueType};
 
 #[cfg(test)]
 mod tests;

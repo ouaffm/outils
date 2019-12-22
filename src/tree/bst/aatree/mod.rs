@@ -6,18 +6,18 @@ use std::cmp::Ordering;
 use std::iter::empty;
 use std::mem::swap;
 use std::ops::{Index, IndexMut};
-use tree::bst::{BinarySearchTree, BstDirection, OrderedTree};
-use tree::traversal::{BinaryInOrder, BinaryInOrderIndices, Traversable};
-use types::{Keys, KeyType, NodeIndex, Tgf, Values, ValueType};
+use crate::tree::bst::{BinarySearchTree, BstDirection, OrderedTree};
+use crate::tree::traversal::{BinaryInOrder, BinaryInOrderIndices, Traversable};
+use crate::types::{Keys, KeyType, NodeIndex, Tgf, Values, ValueType};
 
 #[cfg(test)]
 mod tests;
 
 #[derive(Clone, Debug)]
 struct Node<K, V>
-where
-    K: KeyType,
-    V: ValueType,
+    where
+        K: KeyType,
+        V: ValueType,
 {
     key: K,
     value: V,
