@@ -1,6 +1,6 @@
 [package]
 name = "outils"
-version = "0.2.0"
+version = "0.3.0"
 license = "MIT/Apache-2.0"
 authors = ["ouaffm"]
 edition = "2018"
@@ -29,7 +29,7 @@ harness = false
 
 [dependencies]
 slab = "0.4.2"
-rand = "0.7.2"
+rand = "0.7.3"
 
 [dev-dependencies]
 bencher = "0.1.5"
