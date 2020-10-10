@@ -215,7 +215,7 @@ fn aatree_big_random_insert_delete(bench: &mut Bencher) {
         }
         for x in 0..*BIG_INSERT_DELETE_SIZE {
             let key = BIG_INSERT_DELETE_DATE[x];
-            tree.remove(&key);
+            tree.remove(key);
         }
     })
 }
