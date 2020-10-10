@@ -37,7 +37,7 @@ pub trait BinarySearchTree<K, V, Ix = DefaultIndexType>
     /// Returns the insertion point for a given `key`.  `None` is returned, if the tree is empty,
     /// otherwise an index to a node is returned together with the result of the comparison
     /// against its key.
-    fn get_insert_pos(&self, key: K) -> Option<(NodeIndex, std::cmp::Ordering)>;
+    fn insert_pos(&self, key: K) -> Option<(NodeIndex, std::cmp::Ordering)>;
 
     /// Inserts a key-value pair into the tree. If the tree did not have this `key` present, `None`
     /// is returned. If the tree **did** have this `key` present, the value is updated, and the old
@@ -45,19 +45,19 @@ pub trait BinarySearchTree<K, V, Ix = DefaultIndexType>
     fn insert(&mut self, key: K, value: V) -> Option<V>;
 
     /// Removes a `key` from the tree if present, in this case returning the associated value.
-    fn remove(&mut self, key: &K) -> Option<V>;
+    fn remove(&mut self, key: K) -> Option<V>;
 
     /// Returns `true` if the map contains a value for the specified `key`.
-    fn contains_key(&self, key: &K) -> bool;
+    fn contains_key(&self, key: K) -> bool;
 
     /// Returns an immutable reference to the associated value of the specified `key`.
-    fn get(&self, key: &K) -> Option<&V>;
+    fn get(&self, key: K) -> Option<&V>;
 
     /// Returns a mutable reference to the associated value of the specified `key`.
-    fn get_mut(&mut self, key: &K) -> Option<&mut V>;
+    fn get_mut(&mut self, key: K) -> Option<&mut V>;
 
     /// Returns the index of the tree node holding the specified `key`.
-    fn index(&self, key: &K) -> Option<NodeIndex<Ix>>;
+    fn index(&self, key: K) -> Option<NodeIndex<Ix>>;
 
     /// Returns the key held by the tree node indexed by `node`.
     fn key(&self, node: NodeIndex<Ix>) -> Option<&K>;
