@@ -170,7 +170,7 @@ impl<K, V> AaTree<K, V>
         }
     }
 
-    fn compare(&self, key: &K, node: usize) -> Option<Ordering> {
+    fn compare(&self, key: K, node: usize) -> Option<Ordering> {
         if node == self.nil {
             return None;
         }
@@ -260,7 +260,7 @@ impl<K, V> AaTree<K, V>
         ret
     }
 
-    fn find_node(&self, key: &K) -> Option<usize> {
+    fn find_node(&self, key: K) -> Option<usize> {
         let mut parent = self.root;
         let mut child;
 
@@ -375,7 +375,7 @@ impl<K, V> BinarySearchTree<K, V> for AaTree<K, V>
         K: KeyType,
         V: ValueType,
 {
-    fn get_insert_pos(&self, key: K) -> Option<(NodeIndex, Ordering)> {
+    fn insert_pos(&self, key: K) -> Option<(NodeIndex, Ordering)> {
         if self.root == self.nil {
             return None;
         }
@@ -384,7 +384,7 @@ impl<K, V> BinarySearchTree<K, V> for AaTree<K, V>
         let mut child = self.nil;
 
         loop {
-            let ordering = match self.compare(&key, parent).unwrap_or(Ordering::Equal) {
+            let ordering = match self.compare(key, parent).unwrap_or(Ordering::Equal) {
                 Ordering::Less => {
                     child = self.arena[parent][BstDirection::Left];
                     Ordering::Less
@@ -419,7 +419,7 @@ impl<K, V> BinarySearchTree<K, V> for AaTree<K, V>
     /// assert_eq!(aatree.get(&"KEY-2"), Some(&"VALUE-2"));
     /// ```
     fn insert(&mut self, key: K, value: V) -> Option<V> {
-        match self.get_insert_pos(key) {
+        match self.insert_pos(key) {
             None => {
                 self.root = self.arena.insert(Node::new_leaf(key, value));
                 None
@@ -462,7 +462,7 @@ impl<K, V> BinarySearchTree<K, V> for AaTree<K, V>
     /// assert_eq!(aatree.remove(&"KEY-1"), Some("VALUE-1"));
     /// assert_eq!(aatree.remove(&"KEY-2"), None);
     /// ```
-    fn remove(&mut self, key: &K) -> Option<V> {
+    fn remove(&mut self, key: K) -> Option<V> {
         let node;
         match self.find_node(key) {
             Some(n) => {
@@ -564,23 +564,23 @@ impl<K, V> BinarySearchTree<K, V> for AaTree<K, V>
     }
 
     /// Returns an immutable reference to the associated value of the specified `key`.
-    fn get(&self, key: &K) -> Option<&V> {
+    fn get(&self, key: K) -> Option<&V> {
         self.find_node(key).map(move |node| &self.arena[node].value)
     }
 
     /// Returns a mutable reference to the associated value of the specified `key`.
-    fn get_mut(&mut self, key: &K) -> Option<&mut V> {
+    fn get_mut(&mut self, key: K) -> Option<&mut V> {
         self.find_node(key)
             .map(move |node| &mut self.arena[node].value)
     }
 
     /// Returns the index of the tree node holding the specified `key`.
-    fn index(&self, key: &K) -> Option<NodeIndex> {
+    fn index(&self, key: K) -> Option<NodeIndex> {
         self.find_node(key).map(NodeIndex)
     }
 
     /// Returns `true` if the map contains a value for the specified `key`.
-    fn contains_key(&self, key: &K) -> bool {
+    fn contains_key(&self, key: K) -> bool {
         self.find_node(key).is_some()
     }
 
@@ -680,9 +680,9 @@ impl<K, V> Traversable<V> for AaTree<K, V>
     /// // At this point, the AA algorithm has not had to rotate the tree, so that
     /// // the key `2` will be the right child of the key `1`:
     ///
-    /// let parent = aatree.index(&1).expect("Key '1' should be present");
+    /// let parent = aatree.index(1).expect("Key '1' should be present");
     /// assert_eq!(aatree.child(parent, 0), None);
-    /// assert_eq!(aatree.child(parent, 1), aatree.index(&2));
+    /// assert_eq!(aatree.child(parent, 1), aatree.index(2));
     /// ```
     fn child(&self, node: NodeIndex, pos: usize) -> Option<NodeIndex> {
         let node = node.index();
@@ -716,8 +716,8 @@ impl<K, V> Traversable<V> for AaTree<K, V>
     /// // At this point, the AA algorithm has not had to rotate the tree, so that
     /// // the key `2` will be the right child of the key `1`:
     ///
-    /// let parent = aatree.index(&1).expect("Key '1' should be present");
-    /// let child = aatree.index(&2).expect("Key '2' should be present");
+    /// let parent = aatree.index(1).expect("Key '1' should be present");
+    /// let child = aatree.index(2).expect("Key '2' should be present");
     ///
     /// assert_eq!(aatree.child_count(parent), 2);
     /// assert_eq!(aatree.child_count(child), 2);
@@ -753,9 +753,9 @@ impl<K, V> OrderedTree for AaTree<K, V>
     ///     aatree.insert(i, i);           //   /   \       /   \
     /// }                                  // (0)   (2)    (4)   (6)
     ///
-    /// let n2 = aatree.index(&2).expect("Key '2' should be present");
-    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
-    /// let n4 = aatree.index(&4).expect("Key '4' should be present");
+    /// let n2 = aatree.index(2).expect("Key '2' should be present");
+    /// let n3 = aatree.index(3).expect("Key '3' should be present");
+    /// let n4 = aatree.index(4).expect("Key '4' should be present");
     ///
     /// assert_eq!(aatree.sub_predecessor(n3), Some(n2)); // 2 is biggest key in left subtree of 3.
     /// assert_eq!(aatree.sub_predecessor(n4), None);     // 4 is a leaf and thus has no subtrees.'
@@ -785,9 +785,9 @@ impl<K, V> OrderedTree for AaTree<K, V>
     ///     aatree.insert(i, i);           //   /   \       /   \
     /// }                                  // (0)   (2)    (4)   (6)
     ///
-    /// let n0 = aatree.index(&0).expect("Key '0' should be present");
-    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
-    /// let n4 = aatree.index(&4).expect("Key '4' should be present");
+    /// let n0 = aatree.index(0).expect("Key '0' should be present");
+    /// let n3 = aatree.index(3).expect("Key '3' should be present");
+    /// let n4 = aatree.index(4).expect("Key '4' should be present");
     ///
     /// assert_eq!(aatree.predecessor(n4), Some(n3)); // 3 is the biggest key of the whole tree
     ///                                               // smaller than 4.
@@ -819,9 +819,9 @@ impl<K, V> OrderedTree for AaTree<K, V>
     ///     aatree.insert(i, i);           //   /   \       /   \
     /// }                                  // (0)   (2)    (4)   (6)
     ///
-    /// let n0 = aatree.index(&0).expect("Key '0' should be present");
-    /// let n1 = aatree.index(&1).expect("Key '1' should be present");
-    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
+    /// let n0 = aatree.index(0).expect("Key '0' should be present");
+    /// let n1 = aatree.index(1).expect("Key '1' should be present");
+    /// let n3 = aatree.index(3).expect("Key '3' should be present");
     ///
     /// assert_eq!(aatree.first(n3), Some(n0));  // 0 is the smallest key of the left subtree of 3
     /// assert_eq!(aatree.first(n1), Some(n0));  // 0 is the smallest key of the left subtree of 1
@@ -857,9 +857,9 @@ impl<K, V> OrderedTree for AaTree<K, V>
     ///     aatree.insert(i, i);           //   /   \       /   \
     /// }                                  // (0)   (2)    (4)   (6)
     ///
-    /// let n0 = aatree.index(&0).expect("Key '0' should be present");
-    /// let n1 = aatree.index(&1).expect("Key '1' should be present");
-    /// let n3 = aatree.index(&3).expect("Key '3' should be present");
+    /// let n0 = aatree.index(0).expect("Key '0' should be present");
+    /// let n1 = aatree.index(1).expect("Key '1' should be present");
+    /// let n3 = aatree.index(3).expect("Key '3' should be present");
     ///
     /// assert!(aatree.is_smaller(n0, n3));
     /// assert!(!aatree.is_smaller(n3, n1));
