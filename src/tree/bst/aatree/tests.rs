@@ -13,7 +13,7 @@ fn test_api() {
     tree.insert(1, "1");
     tree.insert(2, "2");
     tree.insert(3, "3");
-    assert!(tree.remove(&2).is_some());
+    assert!(tree.remove(2).is_some());
 
     let nodes = vec![NodeIndex(5), NodeIndex(0), NodeIndex(10)];
 
@@ -46,7 +46,7 @@ fn test_basic_insert_ascending() {
     tree.insert(6, "6");
 
     assert!(tree.insert(6, "7").unwrap().eq("6"));
-    assert!(tree.get(&6).unwrap().eq(&"7"));
+    assert!(tree.get(6).unwrap().eq(&"7"));
 
     let rt = tree.root;
     assert!(is_binary_search_tree(
@@ -86,9 +86,9 @@ fn test_basic_delete() {
     tree.insert(4, "4");
     tree.insert(5, "5");
     tree.insert(6, "6");
-    tree.remove(&3);
+    tree.remove(3);
 
-    assert!(tree.remove(&10).is_none());
+    assert!(tree.remove(10).is_none());
 
     let rt = tree.root;
     assert!(is_binary_search_tree(
@@ -122,7 +122,7 @@ fn test_big_tree_insert_and_delete() {
     ));
     assert!(is_aa_tree(&mut tree, rt));
     for x in list {
-        assert!(tree.remove(&x).is_some());
+        assert!(tree.remove(x).is_some());
         let rt = tree.root;
         let binary = is_binary_search_tree(&mut tree, rt, i64::min_value(), i64::max_value());
         let aa_tree = is_aa_tree(&mut tree, rt);
@@ -154,7 +154,7 @@ fn test_big_random_tree_insert_and_delete() {
     let mut i = 1;
     for x in list {
         i = i + 1;
-        assert!(tree.remove(&x).is_some());
+        assert!(tree.remove(x).is_some());
 
         let rt = tree.root;
         assert!(is_binary_search_tree(
@@ -173,11 +173,11 @@ fn is_binary_search_tree(tree: &mut AaTree<i64, &str>, node: usize, min: i64, ma
     }
 
     let min_ok = tree
-        .compare(&min, node)
+        .compare(min, node)
         .map(|x| x != Ordering::Greater)
         .unwrap_or(false);
     let max_ok = tree
-        .compare(&max, node)
+        .compare(max, node)
         .map(|x| x != Ordering::Less)
         .unwrap_or(false);
 
