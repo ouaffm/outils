@@ -83,14 +83,14 @@ children of a node as a linked list headed by the first child of the parent node
    the longest time, should it become necessary to free memory. 
 
 [1]: https://en.wikipedia.org/wiki/Dynamic_connectivity
-[2]: https://docs.rs/outils/0.1.2/outils/graph/dynconn/hdt/struct.DynamicGraph.html
+[2]: https://docs.rs/outils/0.3.0/outils/graph/dynconn/hdt/struct.DynamicGraph.html
 [3]: https://en.wikipedia.org/wiki/Self-balancing_binary_search_tree
 [4]: https://en.wikipedia.org/wiki/AA_tree
-[5]: https://docs.rs/outils/0.1.2/outils/tree/bst/aatree/struct.AaTree.html
+[5]: https://docs.rs/outils/0.3.0/outils/tree/bst/aatree/struct.AaTree.html
 [6]: https://en.wikipedia.org/wiki/Region-based_memory_management
 [7]: https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
-[8]: https://docs.rs/outils/0.1.2/outils/tree/bst/waatree/struct.WeightedAaTree.html
-[9]: https://docs.rs/outils/0.1.2/outils/tree/bst/aaforest/struct.AaForest.html
-[10]: https://docs.rs/outils/0.1.2/outils/tree/bst/waaforest/struct.WeightedAaForest.html
-[11]: https://docs.rs/outils/0.1.2/outils/tree/generic/struct.Forest.html
+[8]: https://docs.rs/outils/0.3.0/outils/tree/bst/waatree/struct.WeightedAaTree.html
+[9]: https://docs.rs/outils/0.3.0/outils/tree/bst/aaforest/struct.AaForest.html
+[10]: https://docs.rs/outils/0.3.0/outils/tree/bst/waaforest/struct.WeightedAaForest.html
+[11]: https://docs.rs/outils/0.3.0/outils/tree/generic/struct.Forest.html
 [12]: https://en.wikipedia.org/wiki/Left-child_right-sibling_binary_tree
