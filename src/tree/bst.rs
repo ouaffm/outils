@@ -34,6 +34,11 @@ pub trait BinarySearchTree<K, V, Ix = DefaultIndexType>
         V: ValueType,
         Ix: IndexType,
 {
+    /// Returns the insertion point for a given `key`.  `None` is returned, if the tree is empty,
+    /// otherwise an index to a node is returned together with the result of the comparison
+    /// against its key.
+    fn get_insert_pos(&self, key: K) -> Option<(NodeIndex, std::cmp::Ordering)>;
+
     /// Inserts a key-value pair into the tree. If the tree did not have this `key` present, `None`
     /// is returned. If the tree **did** have this `key` present, the value is updated, and the old
     /// value is returned. Note that in this situation, the key is left unchanged.
@@ -54,7 +59,7 @@ pub trait BinarySearchTree<K, V, Ix = DefaultIndexType>
     /// Returns the index of the tree node holding the specified `key`.
     fn index(&self, key: &K) -> Option<NodeIndex<Ix>>;
 
-    /// Returns the  key held by the tree node indexed by `node`.
+    /// Returns the key held by the tree node indexed by `node`.
     fn key(&self, node: NodeIndex<Ix>) -> Option<&K>;
 }
 

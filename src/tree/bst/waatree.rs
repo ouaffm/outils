@@ -359,53 +359,39 @@ impl<K, V, W> WeightedAaTree<K, V, W>
     /// assert_eq!(waatree.weight(n1), Some(&3)); // Weight of KEY-1 changed from 1 to 3.
     /// ```
     pub fn insert_weighted(&mut self, key: K, value: V, weight: W) -> Option<V> {
-        if self.root == self.nil {
-            self.root = self.arena.insert(Node::new_leaf(key, value, weight));
-            return None;
-        }
+        match self.get_insert_pos(key) {
+            None => {
+                self.root = self.arena.insert(Node::new_leaf(key, value, weight));
+                None
+            },
+            Some((node_idx, ord)) => {
+                let parent = node_idx.index();
+                let dir = match ord {
+                    Ordering::Equal => {
+                        let mut old_value = value;
+                        swap(&mut self.arena[parent].value, &mut old_value);
+                        self.set_weight(NodeIndex(parent), weight);
+                        return Some(old_value);
+                    },
+                    Ordering::Less => BstDirection::Left,
+                    Ordering::Greater => BstDirection::Right,
+                };
 
-        let mut parent = self.root;
-        let mut child;
-        let mut dir;
-
-        loop {
-            match self.compare(&key, parent).unwrap_or(Ordering::Equal) {
-                Ordering::Less => {
-                    dir = BstDirection::Left;
-                    child = self.arena[parent][BstDirection::Left];
-                }
-                Ordering::Greater => {
-                    dir = BstDirection::Right;
-                    child = self.arena[parent][BstDirection::Right];
-                }
-                Ordering::Equal => {
-                    let mut old_value = value;
-                    swap(&mut self.arena[parent].value, &mut old_value);
-                    self.set_weight(NodeIndex(parent), weight);
-                    return Some(old_value);
-                }
-            }
-
-            if child == self.nil {
-                child = self.arena.insert(Node::new_leaf(key, value, weight));
+                let mut child = self.arena.insert(Node::new_leaf(key, value, weight));
                 self.link(parent, child, dir);
 
-                break;
-            }
-
-            parent = child;
-        }
-
-        loop {
-            self.update_weights(child);
-            child = self.skew_node(child);
-            child = self.split_node(child);
-            child = self.arena[child].parent;
-            if child == self.nil {
-                break;
+                loop {
+                    self.update_weights(child);
+                    child = self.skew_node(child);
+                    child = self.split_node(child);
+                    child = self.arena[child].parent;
+                    if child == self.nil {
+                        break;
+                    }
+                }
+                None
             }
         }
-        None
     }
 
     fn next_from_subtree(&self, node: usize, dir: BstDirection) -> usize {
@@ -496,6 +482,34 @@ impl<K, V, W> BinarySearchTree<K, V> for WeightedAaTree<K, V, W>
         V: ValueType,
         W: WeightType,
 {
+    fn get_insert_pos(&self, key: K) -> Option<(NodeIndex, Ordering)> {
+        if self.root == self.nil {
+            return None;
+        }
+
+        let mut parent = self.root;
+        let mut child = self.nil;
+
+        loop {
+            let ordering = match self.compare(&key, parent).unwrap_or(Ordering::Equal) {
+                Ordering::Less => {
+                    child = self.arena[parent][BstDirection::Left];
+                    Ordering::Less
+                }
+                Ordering::Greater => {
+                    child = self.arena[parent][BstDirection::Right];
+                    Ordering::Greater
+                }
+                Ordering::Equal => Ordering::Equal,
+            };
+
+            if ordering == Ordering::Equal || child == self.nil {
+                return Some((NodeIndex(parent), ordering));
+            }
+            parent = child;
+        }
+    }
+
     /// Inserts a key-value pair into the `WeightedAaTree` and assign the node the weight `W::default()`.
     /// If the tree did not have this `key` present, `None` is returned. If the tree **did** have
     /// this `key` present, the value and the weight are updated, and the old value is returned.

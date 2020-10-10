@@ -375,6 +375,34 @@ impl<K, V> BinarySearchTree<K, V> for AaTree<K, V>
         K: KeyType,
         V: ValueType,
 {
+    fn get_insert_pos(&self, key: K) -> Option<(NodeIndex, Ordering)> {
+        if self.root == self.nil {
+            return None;
+        }
+
+        let mut parent = self.root;
+        let mut child = self.nil;
+
+        loop {
+            let ordering = match self.compare(&key, parent).unwrap_or(Ordering::Equal) {
+                Ordering::Less => {
+                    child = self.arena[parent][BstDirection::Left];
+                    Ordering::Less
+                }
+                Ordering::Greater => {
+                    child = self.arena[parent][BstDirection::Right];
+                    Ordering::Greater
+                }
+                Ordering::Equal => Ordering::Equal,
+            };
+
+            if ordering == Ordering::Equal || child == self.nil {
+                return Some((NodeIndex(parent), ordering));
+            }
+            parent = child;
+        }
+    }
+
     /// Inserts a key-value pair into the `AaTree`. If the tree did not have this `key` present, `None`
     /// is returned. If the tree **did** have this `key` present, the value is updated, and the old
     /// value is returned. Note that in this situation, the key is left unchanged.
@@ -391,50 +419,37 @@ impl<K, V> BinarySearchTree<K, V> for AaTree<K, V>
     /// assert_eq!(aatree.get(&"KEY-2"), Some(&"VALUE-2"));
     /// ```
     fn insert(&mut self, key: K, value: V) -> Option<V> {
-        if self.root == self.nil {
-            self.root = self.arena.insert(Node::new_leaf(key, value));
-            return None;
-        }
+        match self.get_insert_pos(key) {
+            None => {
+                self.root = self.arena.insert(Node::new_leaf(key, value));
+                None
+            },
+            Some((node_idx, ord)) => {
+                let parent = node_idx.index();
+                let dir = match ord {
+                    Ordering::Equal => {
+                        let mut old_value = value;
+                        swap(&mut self.arena[parent].value, &mut old_value);
+                        return Some(old_value);
+                    },
+                    Ordering::Less => BstDirection::Left,
+                    Ordering::Greater => BstDirection::Right,
+                };
 
-        let mut parent = self.root;
-        let mut child;
-        let mut dir;
-
-        loop {
-            match self.compare(&key, parent).unwrap_or(Ordering::Equal) {
-                Ordering::Less => {
-                    dir = BstDirection::Left;
-                    child = self.arena[parent][BstDirection::Left];
-                }
-                Ordering::Greater => {
-                    dir = BstDirection::Right;
-                    child = self.arena[parent][BstDirection::Right];
-                }
-                Ordering::Equal => {
-                    let mut old_value = value;
-                    swap(&mut self.arena[parent].value, &mut old_value);
-                    return Some(old_value);
-                }
-            }
-
-            if child == self.nil {
-                child = self.arena.insert(Node::new_leaf(key, value));
+                let mut child = self.arena.insert(Node::new_leaf(key, value));
                 self.link(parent, child, dir);
-                break;
-            }
 
-            parent = child;
-        }
-
-        loop {
-            child = self.skew_node(child);
-            child = self.split_node(child);
-            child = self.arena[child].parent;
-            if child == self.nil {
-                break;
+                loop {
+                    child = self.skew_node(child);
+                    child = self.split_node(child);
+                    child = self.arena[child].parent;
+                    if child == self.nil {
+                        break;
+                    }
+                }
+                None
             }
         }
-        None
     }
 
     /// Removes a `key` from the tree if present, in this case returning the associated value.
