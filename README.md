@@ -58,6 +58,11 @@ payload, a node weight can be stored and tree subweights are maintained.
 children of a node as a linked list headed by the first child of the parent node.
 
 ## Recent changes
+- 0.3.0
+  - **BREAKING:** Changed signatures of `AaTree` and `WeightedAaTree` to pass the search key by value
+  as `KeyType` required keys to be `Copy`.
+  - Added function input_pos() to `AaTree` and `WeightedAaTree` to expose the position in a tree 
+  where a new key would be inserted.
 - 0.2.0
   - Upgrade to Rust Edition 2018
 - 0.1.3
