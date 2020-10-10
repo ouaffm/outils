@@ -163,9 +163,9 @@ impl<K, V, W> IndexMut<usize> for Node<K, V, W>
 ///     waatree.insert_weighted(i, i, 1);       //   /   \       /   \
 /// }                                           // (0)   (2)    (4)   (6)
 ///
-/// let n1 = waatree.index(&1).expect("Key '1' should be present");
-/// let n3 = waatree.index(&3).expect("Key '3' should be present");
-/// let n4 = waatree.index(&4).expect("Key '4' should be present");
+/// let n1 = waatree.index(1).expect("Key '1' should be present");
+/// let n3 = waatree.index(3).expect("Key '3' should be present");
+/// let n4 = waatree.index(4).expect("Key '4' should be present");
 ///
 /// assert_eq!(waatree.subweight(n1), Some(&3)); // The subtree rooted in 1 consists of 3 nodes.
 /// assert_eq!(waatree.subweight(n3), Some(&7)); // The subtree rooted in 3 consists of 7 nodes.
@@ -209,7 +209,7 @@ impl<K, V, W> WeightedAaTree<K, V, W>
         }
     }
 
-    fn compare(&self, key: &K, node: usize) -> Option<Ordering> {
+    fn compare(&self, key: K, node: usize) -> Option<Ordering> {
         if node == self.nil {
             return None;
         }
@@ -311,7 +311,7 @@ impl<K, V, W> WeightedAaTree<K, V, W>
         }
     }
 
-    fn find_node(&self, key: &K) -> Option<usize> {
+    fn find_node(&self, key: K) -> Option<usize> {
         let mut parent = self.root;
         let mut child;
 
@@ -359,7 +359,7 @@ impl<K, V, W> WeightedAaTree<K, V, W>
     /// assert_eq!(waatree.weight(n1), Some(&3)); // Weight of KEY-1 changed from 1 to 3.
     /// ```
     pub fn insert_weighted(&mut self, key: K, value: V, weight: W) -> Option<V> {
-        match self.get_insert_pos(key) {
+        match self.insert_pos(key) {
             None => {
                 self.root = self.arena.insert(Node::new_leaf(key, value, weight));
                 None
@@ -482,7 +482,7 @@ impl<K, V, W> BinarySearchTree<K, V> for WeightedAaTree<K, V, W>
         V: ValueType,
         W: WeightType,
 {
-    fn get_insert_pos(&self, key: K) -> Option<(NodeIndex, Ordering)> {
+    fn insert_pos(&self, key: K) -> Option<(NodeIndex, Ordering)> {
         if self.root == self.nil {
             return None;
         }
@@ -491,7 +491,7 @@ impl<K, V, W> BinarySearchTree<K, V> for WeightedAaTree<K, V, W>
         let mut child = self.nil;
 
         loop {
-            let ordering = match self.compare(&key, parent).unwrap_or(Ordering::Equal) {
+            let ordering = match self.compare(key, parent).unwrap_or(Ordering::Equal) {
                 Ordering::Less => {
                     child = self.arena[parent][BstDirection::Left];
                     Ordering::Less
@@ -540,7 +540,7 @@ impl<K, V, W> BinarySearchTree<K, V> for WeightedAaTree<K, V, W>
     /// assert_eq!(waatree.remove(&"KEY-1"), Some("VALUE-1"));
     /// assert_eq!(waatree.remove(&"KEY-2"), None);
     /// ```
-    fn remove(&mut self, key: &K) -> Option<V> {
+    fn remove(&mut self, key: K) -> Option<V> {
         let node;
         match self.find_node(key) {
             Some(n) => {
@@ -643,25 +643,25 @@ impl<K, V, W> BinarySearchTree<K, V> for WeightedAaTree<K, V, W>
         }
     }
 
+    /// Returns `true` if the map contains a value for the specified `key`.
+    fn contains_key(&self, key: K) -> bool {
+        self.find_node(key).is_some()
+    }
+
     /// Returns an immutable reference to the associated value of the specified `key`.
-    fn get(&self, key: &K) -> Option<&V> {
+    fn get(&self, key: K) -> Option<&V> {
         self.find_node(key).map(move |node| &self.arena[node].value)
     }
 
     /// Returns a mutable reference to the associated value of the specified `key`.
-    fn get_mut(&mut self, key: &K) -> Option<&mut V> {
+    fn get_mut(&mut self, key: K) -> Option<&mut V> {
         self.find_node(key)
             .map(move |node| &mut self.arena[node].value)
     }
 
     /// Returns the index of the tree node holding the specified `key`.
-    fn index(&self, key: &K) -> Option<NodeIndex> {
+    fn index(&self, key: K) -> Option<NodeIndex> {
         self.find_node(key).map(NodeIndex)
-    }
-
-    /// Returns `true` if the map contains a value for the specified `key`.
-    fn contains_key(&self, key: &K) -> bool {
-        self.find_node(key).is_some()
     }
 
     /// Returns the  key held by the tree node indexed by `node`.
@@ -761,9 +761,9 @@ impl<K, V, W> Traversable<V> for WeightedAaTree<K, V, W>
     /// // At this point, the AA algorithm has not had to rotate the tree, so that
     /// // the key `2` will be the right child of the key `1`:
     ///
-    /// let parent = waatree.index(&1).expect("Key '1' should be present");
+    /// let parent = waatree.index(1).expect("Key '1' should be present");
     /// assert_eq!(waatree.child(parent, 0), None);
-    /// assert_eq!(waatree.child(parent, 1), waatree.index(&2));
+    /// assert_eq!(waatree.child(parent, 1), waatree.index(2));
     /// ```
     fn child(&self, node: NodeIndex, pos: usize) -> Option<NodeIndex> {
         let node = node.index();
@@ -797,8 +797,8 @@ impl<K, V, W> Traversable<V> for WeightedAaTree<K, V, W>
     /// // At this point, the AA algorithm has not had to rotate the tree, so that
     /// // the key `2` will be the right child of the key `1`:
     ///
-    /// let parent = waatree.index(&1).expect("Key '1' should be present");
-    /// let child = waatree.index(&2).expect("Key '2' should be present");
+    /// let parent = waatree.index(1).expect("Key '1' should be present");
+    /// let child = waatree.index(2).expect("Key '2' should be present");
     ///
     /// assert_eq!(waatree.child_count(parent), 2);
     /// assert_eq!(waatree.child_count(child), 2);
@@ -835,9 +835,9 @@ impl<K, V, W> OrderedTree for WeightedAaTree<K, V, W>
     ///     waatree.insert_weighted(i, i, 1);       //   /   \       /   \
     /// }                                           // (0)   (2)    (4)   (6)
     ///
-    /// let n2 = waatree.index(&2).expect("Key '2' should be present");
-    /// let n3 = waatree.index(&3).expect("Key '3' should be present");
-    /// let n4 = waatree.index(&4).expect("Key '4' should be present");
+    /// let n2 = waatree.index(2).expect("Key '2' should be present");
+    /// let n3 = waatree.index(3).expect("Key '3' should be present");
+    /// let n4 = waatree.index(4).expect("Key '4' should be present");
     ///
     /// assert_eq!(waatree.sub_predecessor(n3), Some(n2)); // 2 is biggest key in left subtree of 3.
     /// assert_eq!(waatree.sub_predecessor(n4), None);     // 4 is a leaf and thus has no subtrees.'
@@ -875,9 +875,9 @@ impl<K, V, W> OrderedTree for WeightedAaTree<K, V, W>
     ///     waatree.insert_weighted(i, i, 1);       //   /   \       /   \
     /// }                                           // (0)   (2)    (4)   (6)
     ///
-    /// let n0 = waatree.index(&0).expect("Key '0' should be present");
-    /// let n3 = waatree.index(&3).expect("Key '3' should be present");
-    /// let n4 = waatree.index(&4).expect("Key '4' should be present");
+    /// let n0 = waatree.index(0).expect("Key '0' should be present");
+    /// let n3 = waatree.index(3).expect("Key '3' should be present");
+    /// let n4 = waatree.index(4).expect("Key '4' should be present");
     ///
     /// assert_eq!(waatree.predecessor(n4), Some(n3)); // 3 is the biggest key of the whole tree
     ///                                               // smaller than 4.
@@ -909,9 +909,9 @@ impl<K, V, W> OrderedTree for WeightedAaTree<K, V, W>
     ///     waatree.insert_weighted(i, i, 1);       //   /   \       /   \
     /// }                                           // (0)   (2)    (4)   (6)
     ///
-    /// let n0 = waatree.index(&0).expect("Key '0' should be present");
-    /// let n1 = waatree.index(&1).expect("Key '1' should be present");
-    /// let n3 = waatree.index(&3).expect("Key '3' should be present");
+    /// let n0 = waatree.index(0).expect("Key '0' should be present");
+    /// let n1 = waatree.index(1).expect("Key '1' should be present");
+    /// let n3 = waatree.index(3).expect("Key '3' should be present");
     ///
     /// assert_eq!(waatree.first(n3), Some(n0));  // 0 is the smallest key of the left subtree of 3
     /// assert_eq!(waatree.first(n1), Some(n0));  // 0 is the smallest key of the left subtree of 1
@@ -947,9 +947,9 @@ impl<K, V, W> OrderedTree for WeightedAaTree<K, V, W>
     ///     waatree.insert_weighted(i, i, 1);       //   /   \       /   \
     /// }                                           // (0)   (2)    (4)   (6)
     ///
-    /// let n0 = waatree.index(&0).expect("Key '0' should be present");
-    /// let n1 = waatree.index(&1).expect("Key '1' should be present");
-    /// let n3 = waatree.index(&3).expect("Key '3' should be present");
+    /// let n0 = waatree.index(0).expect("Key '0' should be present");
+    /// let n1 = waatree.index(1).expect("Key '1' should be present");
+    /// let n3 = waatree.index(3).expect("Key '3' should be present");
     ///
     /// assert!(waatree.is_smaller(n0, n3));
     /// assert!(!waatree.is_smaller(n3, n1));
@@ -983,7 +983,7 @@ impl<K, V, W> WeightedTree<W> for WeightedAaTree<K, V, W>
     ///
     /// let mut waatree = WeightedAaTree::new(10);
     /// waatree.insert_weighted(1, 1, 1);
-    /// let n1 = waatree.index(&1).expect("Key 1 should be present");
+    /// let n1 = waatree.index(1).expect("Key 1 should be present");
     /// let w = waatree.set_weight(n1, 2).expect("Previous weight should not be None");
     /// assert_eq!(w, 1);
     /// assert_eq!(waatree.weight(n1), Some(&2));
@@ -1025,8 +1025,8 @@ impl<K, V, W> WeightedTree<W> for WeightedAaTree<K, V, W>
     /// waatree.insert_weighted(1, 1, 1);
     /// waatree.insert_weighted(2, 2, 1);
     ///
-    /// let n1 = waatree.index(&1).expect("Key 1 should be present");
-    /// let n2 = waatree.index(&2).expect("Key 2 should be present");
+    /// let n1 = waatree.index(1).expect("Key 1 should be present");
+    /// let n2 = waatree.index(2).expect("Key 2 should be present");
     ///
     /// // At this point, the AA algorithm has not had to rotate the tree, so that
     /// // n2 will be the right child of n1:
@@ -1053,8 +1053,8 @@ impl<K, V, W> WeightedTree<W> for WeightedAaTree<K, V, W>
     /// waatree.insert_weighted(1, 1, 1);
     /// waatree.insert_weighted(2, 2, 1);
     ///
-    /// let n1 = waatree.index(&1).expect("Key 1 should be present");
-    /// let n2 = waatree.index(&2).expect("Key 2 should be present");
+    /// let n1 = waatree.index(1).expect("Key 1 should be present");
+    /// let n2 = waatree.index(2).expect("Key 2 should be present");
     ///
     /// // At this point, the AA algorithm has not had to rotate the tree, so that
     /// // n2 will be the right child of n1. Now the weight if n2 will be increased by 1.
